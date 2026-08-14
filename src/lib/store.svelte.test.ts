@@ -234,6 +234,26 @@ describe('finish and templates', () => {
   });
 });
 
+describe('PB restamping after edits to finished workouts', () => {
+  it('lowering a finished workout weight restamps a later workout to isPB=true', () => {
+    app.data.exercises.push({ id: 'row', name: 'Row' });
+    seedFinished('row', 70, '2026-01-01T12:00:00Z');
+    seedFinished('row', 65, '2026-01-08T12:00:00Z');
+    setEntryWeight('seed-2026-01-01T12:00:00Z-row', 'row', 50);
+    expect(getWorkout('seed-2026-01-08T12:00:00Z-row')?.entries[0].isPB).toBe(true);
+  });
+
+  it('deleting the old PB workout restamps a later workout to isPB=true', () => {
+    app.data.exercises.push({ id: 'row', name: 'Row' });
+    seedFinished('row', 50, '2026-01-01T12:00:00Z');
+    seedFinished('row', 80, '2026-01-08T12:00:00Z');
+    seedFinished('row', 65, '2026-01-15T12:00:00Z');
+    expect(getWorkout('seed-2026-01-15T12:00:00Z-row')?.entries[0].isPB).toBe(false);
+    deleteWorkout('seed-2026-01-08T12:00:00Z-row');
+    expect(getWorkout('seed-2026-01-15T12:00:00Z-row')?.entries[0].isPB).toBe(true);
+  });
+});
+
 describe('wipeAll', () => {
   it('resets to empty state', () => {
     startWorkout();
@@ -257,6 +277,17 @@ describe('applyImport', () => {
     const incoming = emptyState();
     incoming.exercises.push({ id: 'inc', name: 'RDL' });
     applyImport(incoming, 'merge');
+    expect(app.data.exercises.map((e) => e.name).sort()).toEqual(['RDL', 'Row']);
+  });
+
+  it('merge mode does not throw when incoming is a Svelte reactive proxy', () => {
+    app.data.exercises.push({ id: 'row', name: 'Row' });
+    const plain = emptyState();
+    plain.exercises.push({ id: 'inc', name: 'RDL' });
+    // Mirrors a component holding the parsed import result in `$state`,
+    // which makes `incoming` a reactive proxy rather than a plain object.
+    const reactiveIncoming = $state(plain);
+    expect(() => applyImport(reactiveIncoming, 'merge')).not.toThrow();
     expect(app.data.exercises.map((e) => e.name).sort()).toEqual(['RDL', 'Row']);
   });
 });

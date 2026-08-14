@@ -1,4 +1,4 @@
-import { computePBs, entryMaxWeight, predictWeight } from './derive';
+import { computePBs, entryMaxWeight, predictWeight, restampPBFlags } from './derive';
 import { newId } from './id';
 import { mergeStates } from './importer';
 import { cleanName, findExerciseByName } from './normalize';
@@ -84,7 +84,8 @@ export function setEntryWeight(workoutId: string, exerciseId: string, weight: nu
   const found = getEntry(workoutId, exerciseId);
   if (!found) return;
   found.e.weight = weight;
-  if (found.e.logged) stampPB(found.w, found.e);
+  if (found.w.finishedAt) restampPBFlags(app.data.workouts);
+  else if (found.e.logged) stampPB(found.w, found.e);
   persist();
 }
 
@@ -92,7 +93,8 @@ export function toggleEntryLogged(workoutId: string, exerciseId: string): void {
   const found = getEntry(workoutId, exerciseId);
   if (!found) return;
   found.e.logged = !found.e.logged;
-  if (found.e.logged) stampPB(found.w, found.e);
+  if (found.w.finishedAt) restampPBFlags(app.data.workouts);
+  else if (found.e.logged) stampPB(found.w, found.e);
   else found.e.isPB = false;
   persist();
 }
@@ -112,7 +114,8 @@ export function addSet(workoutId: string, exerciseId: string): void {
   const sets = (found.e.sets ??= []);
   sets.push({ weight: sets.length ? sets[sets.length - 1].weight : found.e.weight });
   syncHeadline(found.e);
-  if (found.e.logged) stampPB(found.w, found.e);
+  if (found.w.finishedAt) restampPBFlags(app.data.workouts);
+  else if (found.e.logged) stampPB(found.w, found.e);
   persist();
 }
 
@@ -127,7 +130,8 @@ export function updateSet(
   if (!found || !set) return;
   Object.assign(set, patch);
   syncHeadline(found.e);
-  if (found.e.logged) stampPB(found.w, found.e);
+  if (found.w.finishedAt) restampPBFlags(app.data.workouts);
+  else if (found.e.logged) stampPB(found.w, found.e);
   persist();
 }
 
@@ -137,7 +141,8 @@ export function removeSet(workoutId: string, exerciseId: string, index: number):
   found.e.sets.splice(index, 1);
   if (!found.e.sets.length) delete found.e.sets;
   else syncHeadline(found.e);
-  if (found.e.logged) stampPB(found.w, found.e);
+  if (found.w.finishedAt) restampPBFlags(app.data.workouts);
+  else if (found.e.logged) stampPB(found.w, found.e);
   persist();
 }
 
@@ -169,6 +174,7 @@ export function removeEntry(workoutId: string, exerciseId: string): void {
   const w = getWorkout(workoutId);
   if (!w) return;
   w.entries = w.entries.filter((e) => e.exerciseId !== exerciseId);
+  if (w.finishedAt) restampPBFlags(app.data.workouts);
   persist();
 }
 
@@ -189,6 +195,7 @@ export function finishWorkout(workoutId: string): void {
   } else {
     w.finishedAt = new Date().toISOString();
   }
+  restampPBFlags(app.data.workouts);
   persist();
 }
 
@@ -210,6 +217,7 @@ export function saveAsTemplate(workoutId: string, name: string): string {
 
 export function deleteWorkout(id: string): void {
   app.data.workouts = app.data.workouts.filter((w) => w.id !== id);
+  restampPBFlags(app.data.workouts);
   persist();
 }
 
@@ -229,6 +237,10 @@ export function wipeAll(): void {
 }
 
 export function applyImport(incoming: AppState, mode: 'merge' | 'replace'): void {
-  app.data = mode === 'replace' ? incoming : mergeStates($state.snapshot(app).data as AppState, incoming);
+  // `incoming` may be a Svelte reactive proxy (e.g. held in a component's
+  // `$state`); structuredClone inside mergeStates/replace can't clone that,
+  // so snapshot it to a plain object first.
+  const inc = $state.snapshot(incoming) as AppState;
+  app.data = mode === 'replace' ? inc : mergeStates($state.snapshot(app).data as AppState, inc);
   persist();
 }
