@@ -35,8 +35,14 @@ export interface Template {
   exerciseIds: string[];
 }
 
+export type WeightUnit = 'kg' | 'lb';
+
+export type ThemeId = 'emerald' | 'volt' | 'inferno' | 'ice' | 'violet';
+
 export interface Settings {
-  weightStep: number;
+  weightStep: number; // in the display unit
+  unit?: WeightUnit; // default 'kg'; weights are stored canonically in kg
+  theme?: ThemeId; // default 'emerald'
 }
 
 export interface AppState {

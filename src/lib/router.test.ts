@@ -9,6 +9,7 @@ describe('parseRoute', () => {
     expect(parseRoute('#/history')).toEqual({ name: 'history' });
     expect(parseRoute('#/stats')).toEqual({ name: 'stats' });
     expect(parseRoute('#/settings')).toEqual({ name: 'settings' });
+    expect(parseRoute('#/about')).toEqual({ name: 'about' });
   });
 
   it('falls back to home for junk and incomplete routes', () => {

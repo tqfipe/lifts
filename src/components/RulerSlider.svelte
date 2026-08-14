@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Spring } from 'svelte/motion';
   import { dragWeight, snapWeight, tickMarks } from '../lib/rulerMath';
+  import { playTick } from '../lib/tick';
   import { formatWeight } from '../lib/weight';
 
   const PX_PER_KG = 12;
@@ -16,6 +17,7 @@
   let dragging = $state(false);
   let startX = 0;
   let startWeight = 0;
+  let lastSnap = 0;
 
   $effect(() => {
     if (!dragging && value !== center.target) center.set(value, { instant: true });
@@ -25,12 +27,19 @@
     dragging = true;
     startX = e.clientX;
     startWeight = center.current;
+    lastSnap = snapWeight(center.current, step);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
 
   function move(e: PointerEvent): void {
     if (!dragging) return;
-    void center.set(dragWeight(startWeight, startX, e.clientX, PX_PER_KG), { instant: true });
+    const raw = dragWeight(startWeight, startX, e.clientX, PX_PER_KG);
+    void center.set(raw, { instant: true });
+    const snapped = snapWeight(raw, step);
+    if (snapped !== lastSnap) {
+      lastSnap = snapped;
+      playTick();
+    }
   }
 
   function up(): void {

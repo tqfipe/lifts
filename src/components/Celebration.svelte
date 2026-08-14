@@ -17,7 +17,18 @@
     hgt: number; // px
   }
 
-  const COLORS = ['#35e08c', '#7bf7bb', '#17b26a', '#ffc53d', '#ffe193', '#f0f3f8'];
+  function confettiColors(): string[] {
+    const s = getComputedStyle(document.documentElement);
+    const v = (name: string, fallback: string): string => s.getPropertyValue(name).trim() || fallback;
+    return [
+      v('--accent', '#35e08c'),
+      v('--accent-hi', '#7bf7bb'),
+      v('--accent-deep', '#17b26a'),
+      v('--pb', '#ffc53d'),
+      v('--pb-hi', '#ffe193'),
+      v('--text', '#f0f3f8'),
+    ];
+  }
 
   let particles = $state<Particle[]>([]);
   let showMsg = $state(false);
@@ -37,6 +48,7 @@
     clearTimeout(msgTimer);
     msgTimer = setTimeout(() => (showMsg = false), 1800);
     if (reducedMotion) return;
+    const COLORS = confettiColors();
     const burst: Particle[] = [];
     for (let i = 0; i < 44; i++) {
       burst.push({
@@ -82,7 +94,9 @@
     out:fade={{ duration: 250 }}
   >
     <span class="msg-main display">Good job!</span>
-    <span class="msg-sub">New personal best</span>
+    <span class="msg-sub">
+      {celebration.count > 1 ? `${celebration.count} new personal bests` : 'New personal best'}
+    </span>
   </div>
 {/if}
 

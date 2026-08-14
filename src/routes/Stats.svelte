@@ -3,13 +3,14 @@
   import { linePath, scaleSeries, workoutsPerWeek } from '../lib/chartMath';
   import { computePBs, sortExercisesForPicker } from '../lib/derive';
   import { app } from '../lib/store.svelte';
-  import { formatWeight } from '../lib/weight';
+  import { formatWeight, toDisplay } from '../lib/weight';
 
   const W = 320;
   const H = 180;
   const PAD = 24;
 
   const sorted = $derived(sortExercisesForPicker(app.data.exercises, app.data.workouts));
+  const unit = $derived(app.data.settings.unit ?? 'kg');
   let selectedId = $state<string | null>(null);
 
   $effect(() => {
@@ -25,9 +26,9 @@
       .sort((a, b) => a.w.startedAt.localeCompare(b.w.startedAt))
       .map((x) => ({
         t: Date.parse(x.w.startedAt),
-        weight: x.e!.weight,
+        weight: toDisplay(x.e!.weight, unit),
         isPB: x.e!.isPB,
-        sets: x.e!.sets ?? [],
+        sets: (x.e!.sets ?? []).map((s) => ({ ...s, weight: toDisplay(s.weight, unit) })),
       }));
   });
 
@@ -96,7 +97,7 @@
         {/each}
       </svg>
       <p class="chart-sub">
-        {series.length} {series.length === 1 ? 'session' : 'sessions'} · best {formatWeight(Math.max(...series.map((p) => p.weight)))} kg
+        {series.length} {series.length === 1 ? 'session' : 'sessions'} · best {formatWeight(Math.max(...series.map((p) => p.weight)))} {unit}
       </p>
     {:else}
       <p class="empty">No data for this exercise yet.</p>
@@ -108,7 +109,7 @@
     {#each pbs as pb (pb.name)}
       <div class="pb-row">
         <span class="pb-name">{pb.name}</span>
-        <span class="pb-weight">{formatWeight(pb.weight)} kg</span>
+        <span class="pb-weight">{formatWeight(toDisplay(pb.weight, unit))} {unit}</span>
         <span class="pb-date">{pb.date.slice(0, 10)}</span>
       </div>
     {/each}

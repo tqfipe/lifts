@@ -18,6 +18,7 @@
     updateSet,
     workoutDiffersFromTemplate,
   } from '../lib/store.svelte';
+  import { celebrate } from '../lib/celebration.svelte';
   import { toast } from '../lib/toast.svelte';
 
   let { id }: { id: string } = $props();
@@ -76,12 +77,14 @@
 
   function confirmFinish(): void {
     const anyLogged = loggedCount > 0;
+    const pbCount = workout?.entries.filter((e) => e.logged && e.isPB).length ?? 0;
     setWorkoutNote(id, workoutNote);
     finishWorkout(id);
     if (anyLogged && saveTemplate && templateName.trim()) saveAsTemplate(id, templateName.trim());
     finishOpen = false;
     navigate('/');
     toast(anyLogged ? 'Workout saved' : 'Nothing logged — workout discarded');
+    if (anyLogged && pbCount > 0) celebrate(pbCount);
   }
 
   function confirmDelete(): void {

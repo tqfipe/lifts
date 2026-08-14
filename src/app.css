@@ -16,13 +16,17 @@
   --hairline: rgb(255 255 255 / 0.06);
   --text: #f0f3f8;
   --text-dim: #8f99a8;
-  --accent: #35e08c;
+  /* theme (default: emerald) — overridden by :root[data-theme=...] below */
+  --accent-rgb: 53 224 140;
+  --accent: rgb(var(--accent-rgb));
   --accent-hi: #7bf7bb;
   --accent-deep: #17b26a;
-  --accent-soft: rgb(53 224 140 / 0.14);
-  --accent-glow: rgb(53 224 140 / 0.35);
-  --grad-accent: linear-gradient(135deg, #4bee9d, #17b26a);
+  --g1: #4bee9d;
+  --g2: #17b26a;
   --on-accent: #04120a;
+  --accent-soft: rgb(var(--accent-rgb) / 0.14);
+  --accent-glow: rgb(var(--accent-rgb) / 0.35);
+  --grad-accent: linear-gradient(135deg, var(--g1), var(--g2));
   --pb: #ffc53d;
   --pb-hi: #ffe193;
   --on-pb: #201500;
@@ -34,6 +38,38 @@
   --shadow-accent: 0 6px 24px var(--accent-glow);
   --font-display: 'Big Shoulders', 'Arial Narrow', system-ui, sans-serif;
   --nav-clearance: calc(88px + env(safe-area-inset-bottom));
+}
+:root[data-theme='volt'] {
+  --accent-rgb: 196 244 60;
+  --accent-hi: #e4ff92;
+  --accent-deep: #93c11c;
+  --g1: #d3f95e;
+  --g2: #93c11c;
+  --on-accent: #131500;
+}
+:root[data-theme='inferno'] {
+  --accent-rgb: 255 107 53;
+  --accent-hi: #ffa580;
+  --accent-deep: #d14a17;
+  --g1: #ff8352;
+  --g2: #d14a17;
+  --on-accent: #1c0800;
+}
+:root[data-theme='ice'] {
+  --accent-rgb: 76 201 240;
+  --accent-hi: #a4e6fb;
+  --accent-deep: #1d9bc9;
+  --g1: #67d6f8;
+  --g2: #1d9bc9;
+  --on-accent: #001219;
+}
+:root[data-theme='violet'] {
+  --accent-rgb: 167 139 250;
+  --accent-hi: #ccc0fd;
+  --accent-deep: #7c5ce0;
+  --g1: #b49dfc;
+  --g2: #7c5ce0;
+  --on-accent: #120b26;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
@@ -49,8 +85,8 @@ body::before {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(60% 40% at 50% -12%, rgb(53 224 140 / 0.13), transparent 70%),
-    radial-gradient(50% 35% at 100% 105%, rgb(23 178 106 / 0.07), transparent 70%);
+    radial-gradient(60% 40% at 50% -12%, rgb(var(--accent-rgb) / 0.13), transparent 70%),
+    radial-gradient(50% 35% at 100% 105%, rgb(var(--accent-rgb) / 0.07), transparent 70%);
   pointer-events: none;
 }
 body::after {

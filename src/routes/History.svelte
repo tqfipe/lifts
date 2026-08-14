@@ -1,6 +1,8 @@
 <script lang="ts">
   import { app } from '../lib/store.svelte';
-  import { formatWeight } from '../lib/weight';
+  import { formatWeight, toDisplay } from '../lib/weight';
+
+  const unit = $derived(app.data.settings.unit ?? 'kg');
 
   const finished = $derived(
     app.data.workouts
@@ -22,7 +24,9 @@
   }
 
   function summary(entries: { exerciseId: string; weight: number }[]): string {
-    const head = entries.slice(0, 3).map((e) => `${name(e.exerciseId)} ${formatWeight(e.weight)}`);
+    const head = entries
+      .slice(0, 3)
+      .map((e) => `${name(e.exerciseId)} ${formatWeight(toDisplay(e.weight, unit))}`);
     return head.join(' · ') + (entries.length > 3 ? ' · …' : '');
   }
 

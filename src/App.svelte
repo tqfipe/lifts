@@ -12,8 +12,13 @@
   import History from './routes/History.svelte';
   import Stats from './routes/Stats.svelte';
   import SettingsScreen from './routes/SettingsScreen.svelte';
+  import About from './routes/About.svelte';
 
   let route = $state<Route>(parseRoute(location.hash));
+
+  $effect(() => {
+    document.documentElement.dataset.theme = app.data.settings.theme ?? 'emerald';
+  });
 
   onMount(() => {
     void init();
@@ -40,6 +45,8 @@
       <Stats />
     {:else if route.name === 'settings'}
       <SettingsScreen />
+    {:else if route.name === 'about'}
+      <About />
     {/if}
   </main>
   {#if route.name !== 'workout'}

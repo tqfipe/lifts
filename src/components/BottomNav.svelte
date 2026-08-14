@@ -3,6 +3,9 @@
 
   let { route }: { route: Route } = $props();
 
+  // About lives under the Settings tab
+  const activeName = $derived(route.name === 'about' ? 'settings' : route.name);
+
   const tabs = [
     {
       name: 'home',
@@ -33,7 +36,7 @@
 
 <nav aria-label="Main">
   {#each tabs as tab (tab.name)}
-    <a href={tab.href} class:active={route.name === tab.name} aria-current={route.name === tab.name ? 'page' : undefined}>
+    <a href={tab.href} class:active={activeName === tab.name} aria-current={activeName === tab.name ? 'page' : undefined}>
       <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d={tab.d} /></svg>
       <span>{tab.label}</span>
     </a>

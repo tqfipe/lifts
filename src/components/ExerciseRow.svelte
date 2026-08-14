@@ -12,8 +12,7 @@
     toggleEntryLogged,
     updateSet,
   } from '../lib/store.svelte';
-  import { celebrate } from '../lib/celebration.svelte';
-  import { formatWeight } from '../lib/weight';
+  import { formatWeight, toDisplay } from '../lib/weight';
 
   let {
     workoutId,
@@ -28,13 +27,13 @@
   } = $props();
 
   const exercise = $derived(app.data.exercises.find((e) => e.id === entry.exerciseId));
+  const unit = $derived(app.data.settings.unit ?? 'kg');
   let expanded = $state(false);
   let noteOpen = $state(false);
 
   function rowTap(): void {
     if (readonly) return;
     toggleEntryLogged(workoutId, entry.exerciseId);
-    if (entry.logged && entry.isPB) celebrate();
   }
 </script>
 
@@ -73,7 +72,7 @@
         if (!readonly) onweight();
       }}
     >
-      <span class="num w-num">{formatWeight(entry.weight)}</span><span class="unit">kg</span>
+      <span class="num w-num">{formatWeight(toDisplay(entry.weight, unit))}</span><span class="unit">{unit}</span>
       {#if entry.reps != null}<span class="reps-tag">×{entry.reps}</span>{/if}
     </button>
     {#if !readonly}
@@ -89,7 +88,7 @@
         {#each entry.sets as s, i (i)}
           <div class="set">
             <span class="set-n">{i + 1}</span>
-            <button class="set-weight" onclick={() => onweight(i)}>{formatWeight(s.weight)} kg</button>
+            <button class="set-weight" onclick={() => onweight(i)}>{formatWeight(toDisplay(s.weight, unit))} {unit}</button>
             <div class="stepper">
               <button onclick={() => updateSet(workoutId, entry.exerciseId, i, { reps: Math.max(0, (s.reps ?? 0) - 1) })} aria-label="Fewer reps">−</button>
               <span>{s.reps ?? '–'} reps</span>
@@ -127,7 +126,7 @@
   {#if readonly && (entry.sets?.length || entry.note)}
     <div class="detail read">
       {#if entry.sets?.length}
-        <p class="sets-line">{entry.sets.map((s) => `${formatWeight(s.weight)}×${s.reps ?? '?'}`).join('   ')}</p>
+        <p class="sets-line">{entry.sets.map((s) => `${formatWeight(toDisplay(s.weight, unit))}×${s.reps ?? '?'}`).join('   ')}</p>
       {/if}
       {#if entry.note}<p class="note-line">{entry.note}</p>{/if}
     </div>
@@ -145,7 +144,7 @@
   .wrap.logged {
     border-color: var(--accent);
     background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface);
-    box-shadow: 0 0 14px rgb(53 224 140 / 0.12);
+    box-shadow: 0 0 14px rgb(var(--accent-rgb) / 0.12);
   }
   .icon-tile {
     display: grid;

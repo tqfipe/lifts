@@ -3,11 +3,23 @@
   import { downloadExport } from '../lib/export';
   import { parseImport, type ImportResult } from '../lib/importer';
   import { buildImportPrompt } from '../lib/llmPrompt';
-  import { app, applyImport, setWeightStep, wipeAll } from '../lib/store.svelte';
+  import { app, applyImport, setTheme, setUnit, setWeightStep, wipeAll } from '../lib/store.svelte';
   import { toast } from '../lib/toast.svelte';
-  import type { AppState } from '../lib/types';
+  import type { AppState, ThemeId, WeightUnit } from '../lib/types';
 
-  const STEPS = [1, 2.5, 5];
+  const THEMES: { id: ThemeId; label: string; color: string }[] = [
+    { id: 'emerald', label: 'Emerald', color: '#35e08c' },
+    { id: 'volt', label: 'Volt', color: '#c4f43c' },
+    { id: 'inferno', label: 'Inferno', color: '#ff6b35' },
+    { id: 'ice', label: 'Ice', color: '#4cc9f0' },
+    { id: 'violet', label: 'Violet', color: '#a78bfa' },
+  ];
+
+  const UNITS: WeightUnit[] = ['kg', 'lb'];
+
+  const unit = $derived(app.data.settings.unit ?? 'kg');
+  const theme = $derived(app.data.settings.theme ?? 'emerald');
+  const steps = $derived(unit === 'lb' ? [2.5, 5, 10] : [1, 2.5, 5]);
 
   let importText = $state('');
   let result = $state<ImportResult | null>(null);
@@ -115,20 +127,51 @@
   {/if}
 </div>
 
+<h2>Appearance</h2>
+<div class="panel">
+  <p class="hint">Theme</p>
+  <div class="swatches">
+    {#each THEMES as t (t.id)}
+      <button
+        class="swatch"
+        class:on={theme === t.id}
+        style:--swatch={t.color}
+        aria-label={`${t.label} theme`}
+        title={t.label}
+        onclick={() => setTheme(t.id)}
+      ></button>
+    {/each}
+  </div>
+</div>
+
 <h2>Logging</h2>
 <div class="panel">
+  <p class="hint">Unit</p>
+  <div class="steps">
+    {#each UNITS as u (u)}
+      <button class="chip" class:on={unit === u} onclick={() => setUnit(u)}>{u}</button>
+    {/each}
+  </div>
   <p class="hint">Weight step</p>
   <div class="steps">
-    {#each STEPS as s (s)}
+    {#each steps as s (s)}
       <button
         class="chip"
         class:on={app.data.settings.weightStep === s}
         onclick={() => setWeightStep(s)}
       >
-        {s} kg
+        {s} {unit}
       </button>
     {/each}
   </div>
+</div>
+
+<h2>About</h2>
+<div class="panel">
+  <a class="about-link" href="#/about">
+    <span>What is Lifts?</span>
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6" /></svg>
+  </a>
 </div>
 
 <h2>Danger zone</h2>
@@ -219,6 +262,35 @@
   .steps {
     display: flex;
     gap: 8px;
+  }
+  .swatches {
+    display: flex;
+    gap: 14px;
+  }
+  .swatch {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, var(--swatch), color-mix(in srgb, var(--swatch) 55%, #000));
+    border: 2px solid transparent;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  }
+  .swatch:active {
+    transform: scale(0.9);
+  }
+  .swatch.on {
+    border-color: var(--text);
+    box-shadow: 0 0 12px var(--swatch);
+  }
+  .about-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    padding: 4px 2px;
+  }
+  .about-link svg {
+    color: var(--text-dim);
   }
   .chip {
     padding: 9px 16px;

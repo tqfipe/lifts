@@ -176,8 +176,19 @@ function fromFull(json: Record<string, unknown>): ImportResult {
       return fail(`templates[${i}]`, 'must have string id, name, and exerciseIds');
     state.templates.push({ id: t.id, name: t.name, exerciseIds: t.exerciseIds as string[] });
   }
-  if (isRecord(json.settings) && typeof json.settings.weightStep === 'number')
-    state.settings.weightStep = json.settings.weightStep;
+  if (isRecord(json.settings)) {
+    const s = json.settings;
+    if (typeof s.weightStep === 'number' && s.weightStep > 0) state.settings.weightStep = s.weightStep;
+    if (s.unit === 'kg' || s.unit === 'lb') state.settings.unit = s.unit;
+    if (
+      s.theme === 'emerald' ||
+      s.theme === 'volt' ||
+      s.theme === 'inferno' ||
+      s.theme === 'ice' ||
+      s.theme === 'violet'
+    )
+      state.settings.theme = s.theme;
+  }
   state.workouts.sort((a, b) => a.startedAt.localeCompare(b.startedAt));
   restampPBFlags(state.workouts);
   return { ok: true, data: state, preview: previewOf(state) };

@@ -3,7 +3,15 @@ import { newId } from './id';
 import { mergeStates } from './importer';
 import { cleanName, findExerciseByName } from './normalize';
 import { flushSave, loadState, scheduleSave } from './storage';
-import { emptyState, type AppState, type Entry, type SetRecord, type Workout } from './types';
+import {
+  emptyState,
+  type AppState,
+  type Entry,
+  type SetRecord,
+  type ThemeId,
+  type WeightUnit,
+  type Workout,
+} from './types';
 
 export const app = $state({
   data: emptyState(),
@@ -228,6 +236,18 @@ export function deleteTemplate(id: string): void {
 
 export function setWeightStep(step: number): void {
   app.data.settings.weightStep = step;
+  persist();
+}
+
+export function setUnit(unit: WeightUnit): void {
+  if ((app.data.settings.unit ?? 'kg') === unit) return;
+  app.data.settings.unit = unit;
+  app.data.settings.weightStep = unit === 'lb' ? 5 : 2.5;
+  persist();
+}
+
+export function setTheme(theme: ThemeId): void {
+  app.data.settings.theme = theme;
   persist();
 }
 

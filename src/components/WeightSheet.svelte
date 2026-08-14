@@ -1,7 +1,8 @@
 <script lang="ts">
   import Sheet from './Sheet.svelte';
   import RulerSlider from './RulerSlider.svelte';
-  import { formatWeight, parseWeight } from '../lib/weight';
+  import { app } from '../lib/store.svelte';
+  import { formatWeight, fromDisplay, parseWeight, toDisplay } from '../lib/weight';
 
   let {
     open = $bindable(false),
@@ -17,14 +18,16 @@
     onapply: (v: number) => void;
   } = $props();
 
-  let working = $state(0);
+  let working = $state(0); // in the display unit
   let typing = $state(false);
   let text = $state('');
   let shake = $state(false);
 
+  const unit = $derived(app.data.settings.unit ?? 'kg');
+
   $effect(() => {
     if (open) {
-      working = value;
+      working = toDisplay(value, unit);
       typing = false;
     }
   });
@@ -46,7 +49,7 @@
   }
 
   function apply(): void {
-    onapply(working);
+    onapply(fromDisplay(working, unit));
     open = false;
   }
 </script>
@@ -72,7 +75,7 @@
         typing = true;
       }}
     >
-      {formatWeight(working)}<span class="unit">kg</span>
+      {formatWeight(working)}<span class="unit">{unit}</span>
     </button>
   {/if}
   <div class="adjust">
