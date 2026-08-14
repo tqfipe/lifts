@@ -1,4 +1,5 @@
 import { SCHEMA_VERSION, emptyState, type AppState } from './types';
+import { toast } from './toast.svelte';
 
 const DB_NAME = 'workout-tracker';
 const STORE = 'app';
@@ -7,6 +8,7 @@ const SAVE_DELAY_MS = 300;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 let available = true;
+let writeFailing = false;
 let pending: ReturnType<typeof setTimeout> | undefined;
 let lastState: AppState | null = null;
 
@@ -71,8 +73,13 @@ async function writeNow(): Promise<void> {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
+    writeFailing = false;
   } catch {
-    available = false;
+    // Transient write failure: keep lastState so the next mutation's
+    // scheduleSave retries. Do not latch `available` — that flag drives
+    // the "storage unavailable" banner and is reserved for load failures.
+    if (!writeFailing) toast("Couldn't save — will retry");
+    writeFailing = true;
   }
 }
 
@@ -81,6 +88,7 @@ export async function _testReset(): Promise<void> {
   dbPromise = null;
   lastState = null;
   available = true;
+  writeFailing = false;
   clearTimeout(pending);
   await new Promise<void>((resolve) => {
     const req = indexedDB.deleteDatabase(DB_NAME);

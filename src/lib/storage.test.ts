@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SCHEMA_VERSION, emptyState } from './types';
-import { _testReset, flushSave, loadState, migrate, scheduleSave } from './storage';
+import { _testReset, flushSave, isStorageAvailable, loadState, migrate, scheduleSave } from './storage';
+import { toasts } from './toast.svelte';
 
 beforeEach(async () => {
   await _testReset();
@@ -35,6 +36,39 @@ describe('loadState', () => {
     scheduleSave(b);
     await flushSave();
     expect((await loadState()).exercises).toEqual([{ id: 'b', name: 'B' }]);
+  });
+});
+
+describe('write failures', () => {
+  it('does not latch storage unavailable, and a later save still succeeds', async () => {
+    const putSpy = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementationOnce(() => {
+      throw new Error('simulated write failure');
+    });
+    const a = emptyState();
+    a.exercises.push({ id: 'a', name: 'A' });
+    scheduleSave(a);
+    await flushSave();
+    expect(isStorageAvailable()).toBe(true);
+    putSpy.mockRestore();
+
+    const b = emptyState();
+    b.exercises.push({ id: 'b', name: 'B' });
+    scheduleSave(b);
+    await flushSave();
+    expect((await loadState()).exercises).toEqual([{ id: 'b', name: 'B' }]);
+  });
+
+  it('rate-limits the failure toast so a run of failures does not spam it', async () => {
+    const putSpy = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(() => {
+      throw new Error('simulated write failure');
+    });
+    const before = toasts.length;
+    scheduleSave(emptyState());
+    await flushSave();
+    scheduleSave(emptyState());
+    await flushSave();
+    expect(toasts.length).toBe(before + 1);
+    putSpy.mockRestore();
   });
 });
 
