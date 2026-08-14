@@ -12,6 +12,7 @@
     toggleEntryLogged,
     updateSet,
   } from '../lib/store.svelte';
+  import { celebrate } from '../lib/celebration.svelte';
   import { formatWeight } from '../lib/weight';
 
   let {
@@ -33,6 +34,7 @@
   function rowTap(): void {
     if (readonly) return;
     toggleEntryLogged(workoutId, entry.exerciseId);
+    if (entry.logged && entry.isPB) celebrate();
   }
 </script>
 

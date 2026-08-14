@@ -6,6 +6,7 @@
   import { isStorageAvailable } from './lib/storage';
   import { toasts } from './lib/toast.svelte';
   import BottomNav from './components/BottomNav.svelte';
+  import Celebration from './components/Celebration.svelte';
   import Home from './routes/Home.svelte';
   import Workout from './routes/Workout.svelte';
   import History from './routes/History.svelte';
@@ -45,6 +46,8 @@
     <BottomNav {route} />
   {/if}
 {/if}
+
+<Celebration />
 
 <div class="toasts">
   {#each toasts as t (t.id)}
