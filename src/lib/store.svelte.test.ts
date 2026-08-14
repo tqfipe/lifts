@@ -1,14 +1,25 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Entry } from './types';
+import { emptyState } from './types';
 import {
   _resetForTests,
   activeWorkout,
   addExerciseToWorkout,
+  addSet,
   app,
+  deleteWorkout,
+  finishWorkout,
   getWorkout,
+  moveEntry,
+  removeSet,
+  saveAsTemplate,
+  setEntryNote,
   setEntryWeight,
   startWorkout,
   toggleEntryLogged,
+  updateSet,
+  wipeAll,
+  workoutDiffersFromTemplate,
 } from './store.svelte';
 
 function seedFinished(exerciseId: string, weight: number, date: string, extra: Partial<Entry> = {}): void {
@@ -108,5 +119,123 @@ describe('toggleEntryLogged + PB stamping', () => {
     expect(getWorkout(id)?.entries[0].isPB).toBe(false);
     toggleEntryLogged(id, 'row');
     expect(getWorkout(id)?.entries[0]).toMatchObject({ logged: false, isPB: false });
+  });
+});
+
+describe('sets', () => {
+  function setup(): string {
+    app.data.exercises.push({ id: 'row', name: 'Row' });
+    const id = startWorkout();
+    addExerciseToWorkout(id, 'Row');
+    setEntryWeight(id, 'row', 60);
+    return id;
+  }
+
+  it('addSet copies the previous weight and syncs the headline to the max set', () => {
+    const id = setup();
+    addSet(id, 'row');
+    expect(getWorkout(id)?.entries[0].sets).toEqual([{ weight: 60 }]);
+    updateSet(id, 'row', 0, { weight: 70, reps: 8 });
+    addSet(id, 'row');
+    expect(getWorkout(id)?.entries[0].sets).toEqual([{ weight: 70, reps: 8 }, { weight: 70 }]);
+    expect(getWorkout(id)?.entries[0].weight).toBe(70);
+  });
+
+  it('a heavier set while logged stamps a PB', () => {
+    app.data.workouts.push({
+      id: 'hist',
+      startedAt: '2026-01-01T12:00:00Z',
+      finishedAt: '2026-01-01T12:00:00Z',
+      entries: [{ exerciseId: 'row', weight: 65, logged: true, isPB: false }],
+    });
+    const id = setup();
+    toggleEntryLogged(id, 'row');
+    expect(getWorkout(id)?.entries[0].isPB).toBe(false);
+    addSet(id, 'row');
+    updateSet(id, 'row', 0, { weight: 67.5 });
+    expect(getWorkout(id)?.entries[0].isPB).toBe(true);
+  });
+
+  it('removeSet clears the sets array when empty', () => {
+    const id = setup();
+    addSet(id, 'row');
+    removeSet(id, 'row', 0);
+    expect(getWorkout(id)?.entries[0].sets).toBeUndefined();
+  });
+});
+
+describe('notes and reorder', () => {
+  it('setEntryNote stores text and clears empties', () => {
+    app.data.exercises.push({ id: 'row', name: 'Row' });
+    const id = startWorkout();
+    addExerciseToWorkout(id, 'Row');
+    setEntryNote(id, 'row', 'with straps');
+    expect(getWorkout(id)?.entries[0].note).toBe('with straps');
+    setEntryNote(id, 'row', '  ');
+    expect(getWorkout(id)?.entries[0].note).toBeUndefined();
+  });
+
+  it('moveEntry reorders', () => {
+    const id = startWorkout();
+    addExerciseToWorkout(id, 'A');
+    addExerciseToWorkout(id, 'B');
+    addExerciseToWorkout(id, 'C');
+    moveEntry(id, 0, 2);
+    const names = getWorkout(id)!.entries.map(
+      (e) => app.data.exercises.find((x) => x.id === e.exerciseId)!.name,
+    );
+    expect(names).toEqual(['B', 'C', 'A']);
+  });
+});
+
+describe('finish and templates', () => {
+  it('finishWorkout keeps only logged entries and stamps finishedAt', () => {
+    const id = startWorkout();
+    addExerciseToWorkout(id, 'A');
+    addExerciseToWorkout(id, 'B');
+    const exA = app.data.exercises.find((e) => e.name === 'A')!.id;
+    toggleEntryLogged(id, exA);
+    finishWorkout(id);
+    const w = getWorkout(id)!;
+    expect(w.finishedAt).toBeDefined();
+    expect(w.entries).toHaveLength(1);
+    expect(activeWorkout()).toBeNull();
+  });
+
+  it('finishWorkout discards a workout with nothing logged', () => {
+    const id = startWorkout();
+    addExerciseToWorkout(id, 'A');
+    finishWorkout(id);
+    expect(getWorkout(id)).toBeUndefined();
+  });
+
+  it('workoutDiffersFromTemplate detects changes and blank starts', () => {
+    app.data.exercises.push({ id: 'row', name: 'Row' }, { id: 'rdl', name: 'RDL' });
+    app.data.templates.push({ id: 't1', name: 'Pull', exerciseIds: ['row', 'rdl'] });
+    const id = startWorkout('t1');
+    expect(workoutDiffersFromTemplate(getWorkout(id)!)).toBe(false);
+    addExerciseToWorkout(id, 'New');
+    expect(workoutDiffersFromTemplate(getWorkout(id)!)).toBe(true);
+    deleteWorkout(id);
+    const blank = startWorkout();
+    expect(workoutDiffersFromTemplate(getWorkout(blank)!)).toBe(true);
+  });
+
+  it('saveAsTemplate snapshots the exercise order', () => {
+    const id = startWorkout();
+    addExerciseToWorkout(id, 'A');
+    addExerciseToWorkout(id, 'B');
+    const tid = saveAsTemplate(id, 'My day');
+    const t = app.data.templates.find((x) => x.id === tid)!;
+    expect(t.name).toBe('My day');
+    expect(t.exerciseIds).toEqual(getWorkout(id)!.entries.map((e) => e.exerciseId));
+  });
+});
+
+describe('wipeAll', () => {
+  it('resets to empty state', () => {
+    startWorkout();
+    wipeAll();
+    expect(app.data).toEqual(emptyState());
   });
 });

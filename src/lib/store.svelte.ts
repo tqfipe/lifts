@@ -2,7 +2,7 @@ import { computePBs, entryMaxWeight, predictWeight } from './derive';
 import { newId } from './id';
 import { cleanName, findExerciseByName } from './normalize';
 import { flushSave, loadState, scheduleSave } from './storage';
-import { emptyState, type AppState, type Entry, type Workout } from './types';
+import { emptyState, type AppState, type Entry, type SetRecord, type Workout } from './types';
 
 export const app = $state({
   data: emptyState(),
@@ -99,4 +99,130 @@ export function toggleEntryLogged(workoutId: string, exerciseId: string): void {
 export function _resetForTests(): void {
   app.data = emptyState();
   app.ready = true;
+}
+
+function syncHeadline(e: Entry): void {
+  if (e.sets?.length) e.weight = Math.max(...e.sets.map((s) => s.weight));
+}
+
+export function addSet(workoutId: string, exerciseId: string): void {
+  const found = getEntry(workoutId, exerciseId);
+  if (!found) return;
+  const sets = (found.e.sets ??= []);
+  sets.push({ weight: sets.length ? sets[sets.length - 1].weight : found.e.weight });
+  syncHeadline(found.e);
+  if (found.e.logged) stampPB(found.w, found.e);
+  persist();
+}
+
+export function updateSet(
+  workoutId: string,
+  exerciseId: string,
+  index: number,
+  patch: Partial<SetRecord>,
+): void {
+  const found = getEntry(workoutId, exerciseId);
+  const set = found?.e.sets?.[index];
+  if (!found || !set) return;
+  Object.assign(set, patch);
+  syncHeadline(found.e);
+  if (found.e.logged) stampPB(found.w, found.e);
+  persist();
+}
+
+export function removeSet(workoutId: string, exerciseId: string, index: number): void {
+  const found = getEntry(workoutId, exerciseId);
+  if (!found?.e.sets) return;
+  found.e.sets.splice(index, 1);
+  if (!found.e.sets.length) delete found.e.sets;
+  else syncHeadline(found.e);
+  if (found.e.logged) stampPB(found.w, found.e);
+  persist();
+}
+
+export function setEntryReps(workoutId: string, exerciseId: string, reps: number | undefined): void {
+  const found = getEntry(workoutId, exerciseId);
+  if (!found) return;
+  if (reps === undefined) delete found.e.reps;
+  else found.e.reps = reps;
+  persist();
+}
+
+export function setEntryNote(workoutId: string, exerciseId: string, note: string): void {
+  const found = getEntry(workoutId, exerciseId);
+  if (!found) return;
+  if (note.trim()) found.e.note = note;
+  else delete found.e.note;
+  persist();
+}
+
+export function setWorkoutNote(workoutId: string, note: string): void {
+  const w = getWorkout(workoutId);
+  if (!w) return;
+  if (note.trim()) w.note = note;
+  else delete w.note;
+  persist();
+}
+
+export function removeEntry(workoutId: string, exerciseId: string): void {
+  const w = getWorkout(workoutId);
+  if (!w) return;
+  w.entries = w.entries.filter((e) => e.exerciseId !== exerciseId);
+  persist();
+}
+
+export function moveEntry(workoutId: string, from: number, to: number): void {
+  const w = getWorkout(workoutId);
+  if (!w || from === to || from < 0 || from >= w.entries.length) return;
+  const [moved] = w.entries.splice(from, 1);
+  w.entries.splice(Math.max(0, Math.min(to, w.entries.length)), 0, moved);
+  persist();
+}
+
+export function finishWorkout(workoutId: string): void {
+  const w = getWorkout(workoutId);
+  if (!w || w.finishedAt) return;
+  w.entries = w.entries.filter((e) => e.logged);
+  if (!w.entries.length) {
+    app.data.workouts = app.data.workouts.filter((x) => x.id !== workoutId);
+  } else {
+    w.finishedAt = new Date().toISOString();
+  }
+  persist();
+}
+
+export function workoutDiffersFromTemplate(w: Workout): boolean {
+  const t = app.data.templates.find((x) => x.id === w.templateId);
+  if (!t) return true;
+  const ids = w.entries.map((e) => e.exerciseId);
+  return ids.length !== t.exerciseIds.length || ids.some((id, i) => id !== t.exerciseIds[i]);
+}
+
+export function saveAsTemplate(workoutId: string, name: string): string {
+  const w = getWorkout(workoutId);
+  const id = newId();
+  if (!w) return id;
+  app.data.templates.push({ id, name, exerciseIds: w.entries.map((e) => e.exerciseId) });
+  persist();
+  return id;
+}
+
+export function deleteWorkout(id: string): void {
+  app.data.workouts = app.data.workouts.filter((w) => w.id !== id);
+  persist();
+}
+
+export function deleteTemplate(id: string): void {
+  app.data.templates = app.data.templates.filter((t) => t.id !== id);
+  persist();
+}
+
+export function setWeightStep(step: number): void {
+  app.data.settings.weightStep = step;
+  persist();
+}
+
+export function wipeAll(): void {
+  app.data = emptyState();
+  persist();
 }
