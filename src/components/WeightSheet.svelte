@@ -91,8 +91,10 @@
   }
   .value,
   .value-input {
-    font-size: 3rem;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 4.2rem;
+    font-weight: 800;
+    line-height: 1;
     text-align: center;
     width: 100%;
     font-variant-numeric: tabular-nums;
@@ -124,12 +126,16 @@
     background: var(--border);
   }
   .apply {
-    background: var(--accent);
-    color: #04120a;
-    font-weight: 700;
-    font-size: 1.05rem;
+    background: var(--grad-accent);
+    color: var(--on-accent);
+    font-family: var(--font-display);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 1.2rem;
     padding: 16px;
     border-radius: var(--radius);
+    box-shadow: var(--shadow-accent);
     transition: transform 0.1s ease;
   }
   .apply:active {

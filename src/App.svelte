@@ -5,6 +5,7 @@
   import { parseRoute, type Route } from './lib/router';
   import { isStorageAvailable } from './lib/storage';
   import { toasts } from './lib/toast.svelte';
+  import BottomNav from './components/BottomNav.svelte';
   import Home from './routes/Home.svelte';
   import Workout from './routes/Workout.svelte';
   import History from './routes/History.svelte';
@@ -40,6 +41,9 @@
       <SettingsScreen />
     {/if}
   </main>
+  {#if route.name !== 'workout'}
+    <BottomNav {route} />
+  {/if}
 {/if}
 
 <div class="toasts">
@@ -52,7 +56,7 @@
   main {
     max-width: 28rem;
     margin: 0 auto;
-    padding: calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+    padding: calc(14px + env(safe-area-inset-top)) 16px var(--nav-clearance);
   }
   .warn {
     background: rgb(255 93 93 / 0.12);
@@ -65,7 +69,7 @@
   }
   .toasts {
     position: fixed;
-    bottom: calc(24px + env(safe-area-inset-bottom));
+    bottom: calc(96px + env(safe-area-inset-bottom));
     left: 0;
     right: 0;
     display: flex;

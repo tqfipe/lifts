@@ -1,5 +1,6 @@
 <script lang="ts">
   import { scale, slide } from 'svelte/transition';
+  import ExerciseIcon from './ExerciseIcon.svelte';
   import type { Entry } from '../lib/types';
   import {
     addSet,
@@ -56,6 +57,9 @@
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6" /></svg>
       </button>
     {/if}
+    <span class="icon-tile" class:lit={entry.logged} aria-hidden="true">
+      <ExerciseIcon name={exercise?.name ?? ''} size={18} />
+    </span>
     <span class="name">{exercise?.name ?? '?'}</span>
     {#if entry.isPB}
       <span class="pb" in:scale={{ duration: 350, start: 0.4 }}>PB</span>
@@ -67,7 +71,7 @@
         if (!readonly) onweight();
       }}
     >
-      {formatWeight(entry.weight)}<span class="unit">kg</span>
+      <span class="num w-num">{formatWeight(entry.weight)}</span><span class="unit">kg</span>
       {#if entry.reps != null}<span class="reps-tag">×{entry.reps}</span>{/if}
     </button>
     {#if !readonly}
@@ -130,15 +134,31 @@
 
 <style>
   .wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--surface-grad);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius);
     overflow: hidden;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
   .wrap.logged {
     border-color: var(--accent);
     background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface);
+    box-shadow: 0 0 14px rgb(53 224 140 / 0.12);
+  }
+  .icon-tile {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--hairline);
+    color: var(--text-dim);
+    transition: color 0.15s ease;
+  }
+  .icon-tile.lit {
+    color: var(--accent);
   }
   .wrap:global(.dragging) {
     z-index: 10;
@@ -176,20 +196,28 @@
     white-space: nowrap;
   }
   .pb {
-    background: var(--pb);
-    color: #201500;
-    font-size: 0.7rem;
-    font-weight: 800;
-    padding: 3px 7px;
+    background: linear-gradient(110deg, var(--pb) 35%, var(--pb-hi) 50%, var(--pb) 65%);
+    background-size: 250% 100%;
+    animation: pb-shimmer 2.2s ease-in-out infinite;
+    color: var(--on-pb);
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    padding: 3px 8px 2px;
     border-radius: 999px;
+    box-shadow: 0 0 12px rgb(255 197 61 / 0.35);
   }
   .weight {
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
-    font-size: 1.05rem;
+    display: inline-flex;
+    align-items: baseline;
     background: var(--surface-2);
-    padding: 8px 12px;
-    border-radius: 10px;
+    border: 1px solid var(--hairline);
+    padding: 6px 12px;
+    border-radius: 11px;
+  }
+  .w-num {
+    font-size: 1.35rem;
+    line-height: 1;
   }
   .unit,
   .reps-tag {

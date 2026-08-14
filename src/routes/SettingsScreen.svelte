@@ -79,10 +79,7 @@
 </script>
 
 <header>
-  <a href="#/" aria-label="Back">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7" /></svg>
-  </a>
-  <h1>Settings</h1>
+  <h1 class="display">Settings</h1>
 </header>
 
 <h2>Backup</h2>
@@ -159,31 +156,24 @@
 
 <style>
   header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 18px;
-  }
-  header a {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    color: var(--text-dim);
+    margin: 10px 0 20px;
   }
   h1 {
-    font-size: 1.3rem;
+    font-size: 2.1rem;
+    line-height: 1;
   }
   h2 {
-    font-size: 0.85rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.95rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     color: var(--text-dim);
     margin: 22px 0 10px;
   }
   .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--surface-grad);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius);
     padding: 14px;
     display: flex;
@@ -191,11 +181,12 @@
     gap: 12px;
   }
   .primary {
-    background: var(--accent);
-    color: #04120a;
+    background: var(--grad-accent);
+    color: var(--on-accent);
     font-weight: 700;
     padding: 14px;
     border-radius: var(--radius);
+    box-shadow: var(--shadow-accent);
   }
   .secondary {
     background: var(--surface-2);
@@ -249,7 +240,7 @@
   }
   .danger-bg {
     background: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
     font-weight: 700;
     padding: 14px;
     border-radius: var(--radius);

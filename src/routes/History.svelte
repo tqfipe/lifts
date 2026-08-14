@@ -32,10 +32,7 @@
 </script>
 
 <header>
-  <a href="#/" aria-label="Back">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7" /></svg>
-  </a>
-  <h1>History</h1>
+  <h1 class="display">History</h1>
 </header>
 
 {#if !finished.length}
@@ -59,20 +56,11 @@
 
 <style>
   header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 18px;
-  }
-  header a {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    color: var(--text-dim);
+    margin: 10px 0 20px;
   }
   h1 {
-    font-size: 1.3rem;
+    font-size: 2.1rem;
+    line-height: 1;
   }
   .empty {
     color: var(--text-dim);
@@ -85,8 +73,8 @@
     gap: 10px;
   }
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--surface-grad);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius);
     padding: 14px;
     display: flex;
@@ -114,12 +102,14 @@
     border-radius: 999px;
   }
   .pb {
-    font-size: 0.7rem;
-    font-weight: 800;
-    color: #201500;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    color: var(--on-pb);
     background: var(--pb);
-    padding: 3px 7px;
+    padding: 3px 8px 2px;
     border-radius: 999px;
+    box-shadow: 0 0 10px rgb(255 197 61 / 0.3);
   }
   .sum {
     font-size: 0.85rem;

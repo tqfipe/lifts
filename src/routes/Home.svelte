@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ExerciseIcon from '../components/ExerciseIcon.svelte';
   import { activeWorkout, app, startWorkout } from '../lib/store.svelte';
   import { navigate } from '../lib/router';
 
@@ -16,44 +17,57 @@
     );
   });
 
+  const weekCount = $derived.by(() => {
+    const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
+    return app.data.workouts.filter((w) => w.finishedAt && Date.parse(w.startedAt) >= cutoff).length;
+  });
+
+  function exerciseName(id: string): string {
+    return app.data.exercises.find((e) => e.id === id)?.name ?? '';
+  }
+
   function begin(templateId?: string): void {
     navigate(`/workout/${startWorkout(templateId)}`);
   }
 </script>
 
 <header>
-  <h1>Lifts</h1>
-  <nav>
-    <a href="#/history" aria-label="History">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
-    </a>
-    <a href="#/stats" aria-label="Stats">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3" /></svg>
-    </a>
-    <a href="#/settings" aria-label="Settings">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1" /></svg>
-    </a>
-  </nav>
+  <h1 class="display">Lifts<span class="tick">.</span></h1>
+  <p class="sub">
+    {weekCount === 0 ? 'No sessions yet this week' : `${weekCount} ${weekCount === 1 ? 'session' : 'sessions'} this week`}
+  </p>
 </header>
 
 {#if active}
   <button class="resume" onclick={() => navigate(`/workout/${active.id}`)}>
-    <span class="resume-label">Workout in progress</span>
-    <span class="resume-sub">
-      {active.entries.filter((e) => e.logged).length}/{active.entries.length} logged — tap to resume
+    <span class="pulse" aria-hidden="true"></span>
+    <span class="resume-body">
+      <span class="resume-label display">Workout in progress</span>
+      <span class="resume-sub">
+        {active.entries.filter((e) => e.logged).length}/{active.entries.length} logged — tap to resume
+      </span>
     </span>
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7" /></svg>
   </button>
 {:else}
-  <button class="start" onclick={() => begin()}>Start workout</button>
+  <button class="start" onclick={() => begin()}>
+    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M2.5 12h19M6.5 6.5v11M17.5 6.5v11M9.5 8.5v7M14.5 8.5v7" /></svg>
+    <span class="display">Start workout</span>
+  </button>
 {/if}
 
 {#if templates.length && !active}
-  <h2>Templates</h2>
+  <h2 class="display">Templates</h2>
   <div class="templates">
     {#each templates as t (t.id)}
       <button class="template" onclick={() => begin(t.id)}>
+        <span class="t-icons">
+          {#each t.exerciseIds.slice(0, 3) as exId (exId)}
+            <ExerciseIcon name={exerciseName(exId)} size={17} />
+          {/each}
+        </span>
         <span class="t-name">{t.name}</span>
-        <span class="t-sub">{t.exerciseIds.length} exercises</span>
+        <span class="t-sub">{t.exerciseIds.length} {t.exerciseIds.length === 1 ? 'exercise' : 'exercises'}</span>
       </button>
     {/each}
   </div>
@@ -61,70 +75,88 @@
 
 <style>
   header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
+    margin: 10px 0 26px;
   }
   h1 {
-    font-size: 1.6rem;
+    font-size: 3rem;
+    line-height: 1;
   }
-  nav {
-    display: flex;
-    gap: 4px;
+  .tick {
+    color: var(--accent);
   }
-  nav a {
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+  .sub {
     color: var(--text-dim);
-  }
-  nav a:active {
-    background: var(--surface-2);
+    font-size: 0.9rem;
+    margin-top: 6px;
   }
   .start,
   .resume {
     width: 100%;
-    padding: 22px;
     border-radius: var(--radius-lg);
-    font-size: 1.2rem;
-    font-weight: 700;
-    transition: transform 0.1s ease;
+    transition: transform 0.12s ease;
   }
   .start {
-    background: var(--accent);
-    color: #04120a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 26px 22px;
+    background: var(--grad-accent);
+    color: var(--on-accent);
+    box-shadow: var(--shadow-accent);
+  }
+  .start .display {
+    font-size: 1.55rem;
+    letter-spacing: 0.05em;
   }
   .resume {
-    background: var(--surface);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    padding: 22px;
+    background: var(--surface-grad);
     border: 1px solid var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft), var(--shadow);
+    color: var(--accent);
+  }
+  .pulse {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+    animation: pulse 1.6s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.65); opacity: 0.6; }
+  }
+  .resume-body {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    align-items: flex-start;
-    text-align: left;
+    gap: 3px;
+  }
+  .resume-label {
+    font-size: 1.25rem;
+  }
+  .resume-sub {
+    font-size: 0.85rem;
+    color: var(--text-dim);
   }
   .start:active,
   .resume:active,
   .template:active {
     transform: scale(0.97);
   }
-  .resume-label {
-    color: var(--accent);
-  }
-  .resume-sub {
-    font-size: 0.85rem;
-    font-weight: 400;
-    color: var(--text-dim);
-  }
   h2 {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
     color: var(--text-dim);
-    margin: 28px 0 12px;
+    margin: 30px 0 12px;
   }
   .templates {
     display: grid;
@@ -132,20 +164,29 @@
     gap: 12px;
   }
   .template {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--surface-grad);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius);
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     align-items: flex-start;
     text-align: left;
     font-weight: 600;
-    transition: transform 0.1s ease;
+    transition: transform 0.12s ease, border-color 0.15s ease;
+  }
+  .t-icons {
+    display: flex;
+    gap: 7px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .t-name {
+    font-size: 1rem;
   }
   .t-sub {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 400;
     color: var(--text-dim);
   }

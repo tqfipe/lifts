@@ -102,18 +102,10 @@
 
 {#if workout}
   <header>
-    <a href="#/" aria-label="Back">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7" /></svg>
-    </a>
     <div class="head-mid">
-      <span class="date">{fmtDate(workout.startedAt)}</span>
+      <span class="date display">{fmtDate(workout.startedAt)}</span>
       {#if !isFinished}<span class="count">{loggedCount}/{workout.entries.length} logged</span>{/if}
     </div>
-    {#if isFinished && !editing}
-      <button class="head-btn" onclick={() => (editing = true)}>Edit</button>
-    {:else if isFinished}
-      <button class="head-btn" onclick={() => (editing = false)}>Done</button>
-    {/if}
     <button class="head-btn danger" aria-label="Delete workout" onclick={() => (deleteOpen = true)}>
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>
     </button>
@@ -135,17 +127,30 @@
     {/each}
   </div>
 
-  {#if !readonly}
-    <button class="add" onclick={() => (pickerOpen = true)}>+ Add exercise</button>
-  {/if}
-
   {#if workout.note && readonly}
     <p class="workout-note">{workout.note}</p>
   {/if}
 
-  {#if !isFinished}
-    <button class="finish" disabled={!workout.entries.length} onclick={openFinish}>Finish workout</button>
-  {/if}
+  <div class="action-bar">
+    <a href="#/" class="bar-btn icon" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7" /></svg>
+    </a>
+    {#if readonly}
+      <button class="bar-btn primary display" onclick={() => (editing = true)}>Edit</button>
+    {:else}
+      <button class="bar-btn add" onclick={() => (pickerOpen = true)}>
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+        <span>Add</span>
+      </button>
+      {#if isFinished}
+        <button class="bar-btn primary display" onclick={() => (editing = false)}>Done</button>
+      {:else}
+        <button class="bar-btn primary display" disabled={!workout.entries.length} onclick={openFinish}>
+          Finish
+        </button>
+      {/if}
+    {/if}
+  </div>
 {/if}
 
 <ExercisePicker
@@ -193,71 +198,87 @@
     gap: 10px;
     margin-bottom: 18px;
   }
-  header a {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    color: var(--text-dim);
-  }
   .head-mid {
     flex: 1;
     display: flex;
     flex-direction: column;
   }
   .date {
-    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1.05;
   }
   .count {
     font-size: 0.8rem;
     color: var(--text-dim);
   }
-  .head-btn {
-    color: var(--accent);
-    font-weight: 600;
-    padding: 8px;
-  }
   .head-btn.danger {
     color: var(--text-dim);
+    padding: 8px;
   }
   .rows {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-  .add {
-    width: 100%;
-    margin-top: 12px;
-    padding: 14px;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius);
-    color: var(--text-dim);
-    font-weight: 600;
-  }
   .workout-note {
     margin-top: 16px;
     color: var(--text-dim);
     font-style: italic;
   }
-  .finish {
-    position: sticky;
-    bottom: calc(12px + env(safe-area-inset-bottom));
+  .action-bar {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
     width: 100%;
-    margin-top: 20px;
-    padding: 17px;
-    border-radius: var(--radius-lg);
-    background: var(--accent);
-    color: #04120a;
+    max-width: 28rem;
+    z-index: 30;
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgb(16 20 26 / 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--hairline);
+  }
+  .bar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: var(--radius);
     font-weight: 700;
-    font-size: 1.05rem;
-    box-shadow: var(--shadow);
     transition: transform 0.1s ease;
   }
-  .finish:active {
-    transform: scale(0.97);
+  .bar-btn:active {
+    transform: scale(0.95);
   }
-  .finish:disabled {
+  .bar-btn.icon {
+    width: 54px;
+    flex-shrink: 0;
+    color: var(--text-dim);
+    background: var(--surface-2);
+    border: 1px solid var(--hairline);
+  }
+  .bar-btn.add {
+    flex: 1;
+    padding: 15px 10px;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--hairline);
+  }
+  .bar-btn.primary {
+    flex: 1.4;
+    padding: 15px 10px;
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+    background: var(--grad-accent);
+    color: var(--on-accent);
+    box-shadow: var(--shadow-accent);
+  }
+  .bar-btn.primary:disabled {
     opacity: 0.4;
+    box-shadow: none;
   }
   .sheet-h {
     font-size: 1.1rem;
@@ -277,15 +298,17 @@
     accent-color: var(--accent);
   }
   .confirm {
-    background: var(--accent);
-    color: #04120a;
+    background: var(--grad-accent);
+    color: var(--on-accent);
     font-weight: 700;
     padding: 15px;
     border-radius: var(--radius);
+    box-shadow: var(--shadow-accent);
   }
   .confirm.danger-bg {
     background: var(--danger);
-    color: #fff;
+    color: var(--on-danger);
+    box-shadow: none;
   }
   .cancel {
     color: var(--text-dim);

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ExerciseIcon from '../components/ExerciseIcon.svelte';
   import { linePath, scaleSeries, workoutsPerWeek } from '../lib/chartMath';
   import { computePBs, sortExercisesForPicker } from '../lib/derive';
   import { app } from '../lib/store.svelte';
@@ -48,13 +49,18 @@
     workoutsPerWeek(app.data.workouts, 12, new Date()),
   );
   const maxWeek = $derived(Math.max(1, ...weeks.map((w) => w.count)));
+
+  const areaPath = $derived.by(() => {
+    const pts = chart.points;
+    if (pts.length < 2) return '';
+    const first = pts[0];
+    const last = pts[pts.length - 1];
+    return `${linePath(pts)} L${last.x} ${H - 6} L${first.x} ${H - 6} Z`;
+  });
 </script>
 
 <header>
-  <a href="#/" aria-label="Back">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7" /></svg>
-  </a>
-  <h1>Stats</h1>
+  <h1 class="display">Stats</h1>
 </header>
 
 {#if !sorted.length}
@@ -63,6 +69,7 @@
   <div class="chips">
     {#each sorted as e (e.id)}
       <button class="chip" class:on={selectedId === e.id} onclick={() => (selectedId = e.id)}>
+        <ExerciseIcon name={e.name} size={15} />
         {e.name}
       </button>
     {/each}
@@ -71,6 +78,13 @@
   <div class="panel">
     {#if series.length}
       <svg viewBox={`0 0 ${W} ${H}`} class="chart" role="img" aria-label="Weight over time">
+        <defs>
+          <linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28" />
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        {#if areaPath}<path d={areaPath} fill="url(#area-fill)" />{/if}
         {#each series as p (p.t)}
           {#each p.sets as s, si (si)}
             <circle cx={chart.x(p.t)} cy={chart.y(s.weight)} r="2.5" class="set-dot" />
@@ -82,7 +96,7 @@
         {/each}
       </svg>
       <p class="chart-sub">
-        {series.length} sessions · best {formatWeight(Math.max(...series.map((p) => p.weight)))} kg
+        {series.length} {series.length === 1 ? 'session' : 'sessions'} · best {formatWeight(Math.max(...series.map((p) => p.weight)))} kg
       </p>
     {:else}
       <p class="empty">No data for this exercise yet.</p>
@@ -115,25 +129,18 @@
 
 <style>
   header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 18px;
-  }
-  header a {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    color: var(--text-dim);
+    margin: 10px 0 20px;
   }
   h1 {
-    font-size: 1.3rem;
+    font-size: 2.1rem;
+    line-height: 1;
   }
   h2 {
-    font-size: 0.85rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.95rem;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.12em;
     color: var(--text-dim);
     margin: 24px 0 10px;
   }
@@ -150,11 +157,14 @@
     margin-bottom: 6px;
   }
   .chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
     flex-shrink: 0;
     padding: 8px 14px;
     border-radius: 999px;
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid var(--hairline);
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-dim);
@@ -165,8 +175,8 @@
     color: var(--accent);
   }
   .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--surface-grad);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius);
     padding: 14px;
   }
@@ -218,8 +228,10 @@
     white-space: nowrap;
   }
   .pb-weight {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.15rem;
     font-variant-numeric: tabular-nums;
-    font-weight: 700;
     color: var(--pb);
   }
   .pb-date {
