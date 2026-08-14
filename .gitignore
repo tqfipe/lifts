@@ -25,3 +25,13 @@ dist-ssr
 
 # working documents stay uncommitted (owner's global rule)
 docs/
+
+# personal data must never reach this public repo
+workouts-*.json
+*import*.json
+lifts-import*.json
+.playwright-mcp/
+.superpowers/
+.env
+.env.*
+*.har
