@@ -80,6 +80,10 @@ Pushes to `main` deploy to GitHub Pages via `.github/workflows/deploy.yml`.
 Installed apps pick up new versions on their next launch — updates never
 interrupt a workout in progress.
 
+## License
+
+[MIT](LICENSE)
+
 ---
 
 *Screenshots show synthetic demo data.*
