@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Entry } from './types';
 import { emptyState } from './types';
+import { parseImport } from './importer';
 import {
   _resetForTests,
   activeWorkout,
   addExerciseToWorkout,
   addSet,
   app,
+  applyImport,
   deleteWorkout,
   finishWorkout,
   getWorkout,
@@ -237,5 +239,24 @@ describe('wipeAll', () => {
     startWorkout();
     wipeAll();
     expect(app.data).toEqual(emptyState());
+  });
+});
+
+describe('applyImport', () => {
+  it('replace mode swaps the whole state', () => {
+    startWorkout();
+    const incoming = emptyState();
+    incoming.exercises.push({ id: 'x', name: 'X' });
+    applyImport(incoming, 'replace');
+    expect(app.data.exercises).toEqual([{ id: 'x', name: 'X' }]);
+    expect(app.data.workouts).toEqual([]);
+  });
+
+  it('merge mode keeps current data and adds incoming', () => {
+    app.data.exercises.push({ id: 'row', name: 'Row' });
+    const incoming = emptyState();
+    incoming.exercises.push({ id: 'inc', name: 'RDL' });
+    applyImport(incoming, 'merge');
+    expect(app.data.exercises.map((e) => e.name).sort()).toEqual(['RDL', 'Row']);
   });
 });

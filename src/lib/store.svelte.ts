@@ -1,5 +1,6 @@
 import { computePBs, entryMaxWeight, predictWeight } from './derive';
 import { newId } from './id';
+import { mergeStates } from './importer';
 import { cleanName, findExerciseByName } from './normalize';
 import { flushSave, loadState, scheduleSave } from './storage';
 import { emptyState, type AppState, type Entry, type SetRecord, type Workout } from './types';
@@ -224,5 +225,10 @@ export function setWeightStep(step: number): void {
 
 export function wipeAll(): void {
   app.data = emptyState();
+  persist();
+}
+
+export function applyImport(incoming: AppState, mode: 'merge' | 'replace'): void {
+  app.data = mode === 'replace' ? incoming : mergeStates($state.snapshot(app).data as AppState, incoming);
   persist();
 }
