@@ -4,6 +4,7 @@ export interface ReorderParams {
   index: number;
   count: number;
   onreorder: (from: number, to: number) => void;
+  enabled?: boolean;
 }
 
 const LONG_PRESS_MS = 350;
@@ -19,7 +20,7 @@ export function reorderable(node: HTMLElement, params: ReorderParams) {
   const preventScroll = (e: TouchEvent): void => e.preventDefault();
 
   function down(e: PointerEvent): void {
-    if (!e.isPrimary) return;
+    if (!e.isPrimary || p.enabled === false) return;
     startY = e.clientY;
     pointerId = e.pointerId;
     timer = setTimeout(start, LONG_PRESS_MS);

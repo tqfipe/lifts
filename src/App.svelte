@@ -3,6 +3,7 @@
   import { fly } from 'svelte/transition';
   import { app, init } from './lib/store.svelte';
   import { parseRoute, type Route } from './lib/router';
+  import { isStorageAvailable } from './lib/storage';
   import { toasts } from './lib/toast.svelte';
   import Home from './routes/Home.svelte';
   import Workout from './routes/Workout.svelte';
@@ -24,6 +25,9 @@
 
 {#if app.ready}
   <main>
+    {#if !isStorageAvailable()}
+      <p class="warn">Storage unavailable — data won't survive a reload. Export a backup now.</p>
+    {/if}
     {#if route.name === 'home'}
       <Home />
     {:else if route.name === 'workout'}
@@ -49,6 +53,15 @@
     max-width: 28rem;
     margin: 0 auto;
     padding: calc(12px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  .warn {
+    background: rgb(255 93 93 / 0.12);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 12px;
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
   }
   .toasts {
     position: fixed;

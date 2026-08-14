@@ -3,7 +3,6 @@
   import { downloadExport } from '../lib/export';
   import { parseImport, type ImportResult } from '../lib/importer';
   import { buildImportPrompt } from '../lib/llmPrompt';
-  import { isStorageAvailable } from '../lib/storage';
   import { app, applyImport, setWeightStep, wipeAll } from '../lib/store.svelte';
   import { toast } from '../lib/toast.svelte';
   import type { AppState } from '../lib/types';
@@ -14,6 +13,8 @@
   let result = $state<ImportResult | null>(null);
   let replaceOpen = $state(false);
   let wipeOpen = $state(false);
+  let replaceArmed = $state(false);
+  let wipeArmed = $state(false);
 
   function check(): void {
     result = importText.trim() ? parseImport(importText) : null;
@@ -45,6 +46,10 @@
   }
 
   function doReplace(): void {
+    if (!replaceArmed) {
+      replaceArmed = true;
+      return;
+    }
     if (!result?.ok) return;
     applyImport(result.data, 'replace');
     importText = '';
@@ -54,10 +59,23 @@
   }
 
   function doWipe(): void {
+    if (!wipeArmed) {
+      wipeArmed = true;
+      return;
+    }
     wipeAll();
     wipeOpen = false;
     toast('All data wiped');
   }
+
+  // Closing either sheet (backdrop tap, Cancel, or after a successful
+  // confirm) disarms it, so reopening always starts back at step one.
+  $effect(() => {
+    if (!replaceOpen) replaceArmed = false;
+  });
+  $effect(() => {
+    if (!wipeOpen) wipeArmed = false;
+  });
 </script>
 
 <header>
@@ -66,10 +84,6 @@
   </a>
   <h1>Settings</h1>
 </header>
-
-{#if !isStorageAvailable()}
-  <p class="warn">Storage unavailable — data won't survive a reload. Export a backup now.</p>
-{/if}
 
 <h2>Backup</h2>
 <div class="panel">
@@ -128,14 +142,18 @@
 <Sheet bind:open={replaceOpen}>
   <h2 class="sheet-h">Replace everything?</h2>
   <p class="hint">Your current workouts, templates, and exercises will be deleted and replaced by the import.</p>
-  <button class="danger-bg" onclick={doReplace}>Yes, replace all my data</button>
+  <button class="danger-bg" onclick={doReplace}>
+    {replaceArmed ? 'Tap again to confirm' : 'Yes, replace all my data'}
+  </button>
   <button class="cancel" onclick={() => (replaceOpen = false)}>Cancel</button>
 </Sheet>
 
 <Sheet bind:open={wipeOpen}>
   <h2 class="sheet-h">Wipe all data?</h2>
   <p class="hint">Every workout, template, and PB will be permanently deleted from this device.</p>
-  <button class="danger-bg" onclick={doWipe}>Yes, wipe everything</button>
+  <button class="danger-bg" onclick={doWipe}>
+    {wipeArmed ? 'Tap again to confirm' : 'Yes, wipe everything'}
+  </button>
   <button class="cancel" onclick={() => (wipeOpen = false)}>Cancel</button>
 </Sheet>
 
@@ -162,14 +180,6 @@
     letter-spacing: 0.08em;
     color: var(--text-dim);
     margin: 22px 0 10px;
-  }
-  .warn {
-    background: rgb(255 93 93 / 0.12);
-    border: 1px solid var(--danger);
-    color: var(--danger);
-    padding: 12px;
-    border-radius: var(--radius);
-    font-size: 0.9rem;
   }
   .panel {
     background: var(--surface);

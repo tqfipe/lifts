@@ -127,6 +127,7 @@
           index: i,
           count: workout.entries.length,
           onreorder: (from, to) => moveEntry(id, from, to),
+          enabled: !readonly,
         }}
       >
         <ExerciseRow workoutId={id} {entry} {readonly} onweight={(setIndex) => openWeight(entry.exerciseId, setIndex)} />
