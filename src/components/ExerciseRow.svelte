@@ -59,7 +59,7 @@
       </button>
     {/if}
     <span class="icon-tile" class:lit={entry.logged} aria-hidden="true">
-      <ExerciseIcon name={exercise?.name ?? ''} size={18} />
+      <ExerciseIcon name={exercise?.name ?? ''} icon={exercise?.icon} size={18} />
     </span>
     <span class="name">{exercise?.name ?? '?'}</span>
     {#if entry.isPB}

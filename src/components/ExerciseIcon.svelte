@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { GLYPHS, iconForName } from '../lib/exerciseCatalog';
+  import { GLYPHS, iconForName, type IconId } from '../lib/exerciseCatalog';
 
-  let { name, size = 20 }: { name: string; size?: number } = $props();
+  let {
+    name,
+    icon = undefined,
+    size = 20,
+  }: { name: string; icon?: IconId; size?: number } = $props();
 
-  const glyph = $derived(GLYPHS[iconForName(name)]);
+  const glyph = $derived(GLYPHS[icon ?? iconForName(name)]);
 </script>
 
 <svg

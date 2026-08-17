@@ -1,20 +1,7 @@
 import { normalizeName } from './normalize';
-import type { Exercise } from './types';
+import type { Exercise, IconId } from './types';
 
-export type IconId =
-  | 'barbell'
-  | 'dumbbell'
-  | 'sled'
-  | 'rack'
-  | 'cable-row'
-  | 'pulldown'
-  | 'bench'
-  | 'curl'
-  | 'pushdown'
-  | 'fly'
-  | 'leg-machine'
-  | 'calf'
-  | 'weight';
+export type { IconId };
 
 export interface CatalogEntry {
   name: string;

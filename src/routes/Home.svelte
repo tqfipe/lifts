@@ -22,8 +22,9 @@
     return app.data.workouts.filter((w) => w.finishedAt && Date.parse(w.startedAt) >= cutoff).length;
   });
 
-  function exerciseName(id: string): string {
-    return app.data.exercises.find((e) => e.id === id)?.name ?? '';
+  function exerciseFor(id: string): { name: string; icon?: import('../lib/types').IconId } {
+    const e = app.data.exercises.find((x) => x.id === id);
+    return { name: e?.name ?? '', icon: e?.icon };
   }
 
   function begin(templateId?: string): void {
@@ -63,7 +64,7 @@
       <button class="template" onclick={() => begin(t.id)}>
         <span class="t-icons">
           {#each t.exerciseIds.slice(0, 3) as exId (exId)}
-            <ExerciseIcon name={exerciseName(exId)} size={17} />
+            <ExerciseIcon name={exerciseFor(exId).name} icon={exerciseFor(exId).icon} size={17} />
           {/each}
         </span>
         <span class="t-name">{t.name}</span>

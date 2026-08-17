@@ -1,8 +1,24 @@
 export const SCHEMA_VERSION = 1;
 
+export type IconId =
+  | 'barbell'
+  | 'dumbbell'
+  | 'sled'
+  | 'rack'
+  | 'cable-row'
+  | 'pulldown'
+  | 'bench'
+  | 'curl'
+  | 'pushdown'
+  | 'fly'
+  | 'leg-machine'
+  | 'calf'
+  | 'weight';
+
 export interface Exercise {
   id: string;
   name: string;
+  icon?: IconId; // explicit override; otherwise derived from the name
 }
 
 export interface SetRecord {

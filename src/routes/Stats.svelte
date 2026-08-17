@@ -70,7 +70,7 @@
   <div class="chips">
     {#each sorted as e (e.id)}
       <button class="chip" class:on={selectedId === e.id} onclick={() => (selectedId = e.id)}>
-        <ExerciseIcon name={e.name} size={15} />
+        <ExerciseIcon name={e.name} icon={e.icon} size={15} />
         {e.name}
       </button>
     {/each}

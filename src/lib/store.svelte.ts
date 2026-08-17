@@ -1,12 +1,13 @@
 import { computePBs, entryMaxWeight, predictWeight, restampPBFlags } from './derive';
 import { newId } from './id';
 import { mergeStates } from './importer';
-import { cleanName, findExerciseByName } from './normalize';
+import { cleanName, findExerciseByName, normalizeName } from './normalize';
 import { flushSave, loadState, scheduleSave } from './storage';
 import {
   emptyState,
   type AppState,
   type Entry,
+  type IconId,
   type SetRecord,
   type ThemeId,
   type WeightUnit,
@@ -249,6 +250,45 @@ export function setUnit(unit: WeightUnit): void {
 export function setTheme(theme: ThemeId): void {
   app.data.settings.theme = theme;
   persist();
+}
+
+export function exerciseUsageCount(exerciseId: string): number {
+  return app.data.workouts.filter((w) => w.entries.some((e) => e.exerciseId === exerciseId)).length;
+}
+
+export function renameExercise(exerciseId: string, name: string): boolean {
+  const exercise = app.data.exercises.find((e) => e.id === exerciseId);
+  const cleaned = cleanName(name);
+  if (!exercise || !cleaned) return false;
+  const collision = app.data.exercises.find(
+    (e) => e.id !== exerciseId && normalizeName(e.name) === normalizeName(cleaned),
+  );
+  if (collision) return false;
+  exercise.name = cleaned;
+  persist();
+  return true;
+}
+
+export function setExerciseIcon(exerciseId: string, icon: IconId | undefined): void {
+  const exercise = app.data.exercises.find((e) => e.id === exerciseId);
+  if (!exercise) return;
+  if (icon) exercise.icon = icon;
+  else delete exercise.icon;
+  persist();
+}
+
+/** Deletes an exercise. Refused (returns false) when any workout references it;
+ * template references are cleaned up on success. */
+export function deleteExercise(exerciseId: string): boolean {
+  if (exerciseUsageCount(exerciseId) > 0) return false;
+  const before = app.data.exercises.length;
+  app.data.exercises = app.data.exercises.filter((e) => e.id !== exerciseId);
+  if (app.data.exercises.length === before) return false;
+  for (const t of app.data.templates) {
+    t.exerciseIds = t.exerciseIds.filter((id) => id !== exerciseId);
+  }
+  persist();
+  return true;
 }
 
 export function wipeAll(): void {

@@ -1,4 +1,5 @@
 import { restampPBFlags } from './derive';
+import { GLYPHS } from './exerciseCatalog';
 import { newId } from './id';
 import { cleanName, normalizeName } from './normalize';
 import {
@@ -7,6 +8,7 @@ import {
   type AppState,
   type Entry,
   type Exercise,
+  type IconId,
   type SetRecord,
   type Workout,
 } from './types';
@@ -119,7 +121,9 @@ function fromFull(json: Record<string, unknown>): ImportResult {
     const e = exercises[i];
     if (!isRecord(e) || typeof e.id !== 'string' || typeof e.name !== 'string')
       return fail(`exercises[${i}]`, 'must have string id and name');
-    state.exercises.push({ id: e.id, name: e.name });
+    const exercise: Exercise = { id: e.id, name: e.name };
+    if (typeof e.icon === 'string' && e.icon in GLYPHS) exercise.icon = e.icon as IconId;
+    state.exercises.push(exercise);
   }
   const workouts = json.workouts as unknown[];
   for (let i = 0; i < workouts.length; i++) {

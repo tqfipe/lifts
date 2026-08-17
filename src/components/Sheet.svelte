@@ -1,8 +1,11 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { fade, fly } from 'svelte/transition';
+  import { keyboard, trackKeyboard } from '../lib/keyboard.svelte';
 
   let { open = $bindable(false), children }: { open?: boolean; children: Snippet } = $props();
+
+  trackKeyboard();
 </script>
 
 {#if open}
@@ -12,7 +15,14 @@
     onclick={() => (open = false)}
     aria-hidden="true"
   ></div>
-  <div class="sheet" transition:fly={{ y: 320, duration: 220 }} role="dialog" aria-modal="true">
+  <div
+    class="sheet"
+    style:bottom={`${keyboard.inset}px`}
+    style:max-height={`calc(85dvh - ${keyboard.inset}px)`}
+    transition:fly={{ y: 320, duration: 220 }}
+    role="dialog"
+    aria-modal="true"
+  >
     {@render children()}
   </div>
 {/if}
@@ -41,5 +51,6 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    transition: bottom 0.15s ease-out;
   }
 </style>

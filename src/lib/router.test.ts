@@ -10,6 +10,7 @@ describe('parseRoute', () => {
     expect(parseRoute('#/stats')).toEqual({ name: 'stats' });
     expect(parseRoute('#/settings')).toEqual({ name: 'settings' });
     expect(parseRoute('#/about')).toEqual({ name: 'about' });
+    expect(parseRoute('#/exercises')).toEqual({ name: 'exercises' });
   });
 
   it('falls back to home for junk and incomplete routes', () => {

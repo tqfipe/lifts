@@ -13,6 +13,7 @@
   import Stats from './routes/Stats.svelte';
   import SettingsScreen from './routes/SettingsScreen.svelte';
   import About from './routes/About.svelte';
+  import Exercises from './routes/Exercises.svelte';
 
   let route = $state<Route>(parseRoute(location.hash));
 
@@ -47,6 +48,8 @@
       <SettingsScreen />
     {:else if route.name === 'about'}
       <About />
+    {:else if route.name === 'exercises'}
+      <Exercises />
     {/if}
   </main>
   {#if route.name !== 'workout'}

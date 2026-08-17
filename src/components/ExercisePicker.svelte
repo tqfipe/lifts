@@ -56,7 +56,7 @@
       <p class="section display">Your exercises</p>
       {#each results as e (e.id)}
         <button class="item" onclick={() => pick(e.name)}>
-          <span class="icon-tile" aria-hidden="true"><ExerciseIcon name={e.name} size={19} /></span>
+          <span class="icon-tile" aria-hidden="true"><ExerciseIcon name={e.name} icon={e.icon} size={19} /></span>
           <span class="item-name">{e.name}</span>
         </button>
       {/each}

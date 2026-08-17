@@ -14,8 +14,12 @@ import {
   getWorkout,
   moveEntry,
   removeSet,
+  deleteExercise,
+  exerciseUsageCount,
+  renameExercise,
   saveAsTemplate,
   setEntryNote,
+  setExerciseIcon,
   setEntryWeight,
   startWorkout,
   toggleEntryLogged,
@@ -289,5 +293,45 @@ describe('applyImport', () => {
     const reactiveIncoming = $state(plain);
     expect(() => applyImport(reactiveIncoming, 'merge')).not.toThrow();
     expect(app.data.exercises.map((e) => e.name).sort()).toEqual(['RDL', 'Row']);
+  });
+});
+
+describe('exercise CRUD', () => {
+  function seedExercises(): void {
+    app.data.exercises.push({ id: 'row', name: 'Row' }, { id: 'oops', name: 'Msitake' });
+    seedFinished('row', 60, '2026-01-05T12:00:00Z');
+    app.data.templates.push({ id: 't1', name: 'Pull', exerciseIds: ['row', 'oops'] });
+  }
+
+  it('counts usage across workouts', () => {
+    seedExercises();
+    expect(exerciseUsageCount('row')).toBe(1);
+    expect(exerciseUsageCount('oops')).toBe(0);
+  });
+
+  it('renames, rejecting empty and colliding names', () => {
+    seedExercises();
+    expect(renameExercise('oops', 'Mistake fixed')).toBe(true);
+    expect(app.data.exercises.find((e) => e.id === 'oops')?.name).toBe('Mistake fixed');
+    expect(renameExercise('oops', '  row ')).toBe(false); // collides with Row
+    expect(renameExercise('oops', '   ')).toBe(false);
+    expect(renameExercise('oops', 'Mistake FIXED')).toBe(true); // recasing itself is fine
+  });
+
+  it('sets and clears an icon override', () => {
+    seedExercises();
+    setExerciseIcon('oops', 'curl');
+    expect(app.data.exercises.find((e) => e.id === 'oops')?.icon).toBe('curl');
+    setExerciseIcon('oops', undefined);
+    expect(app.data.exercises.find((e) => e.id === 'oops')?.icon).toBeUndefined();
+  });
+
+  it('deletes only unused exercises, cleaning templates', () => {
+    seedExercises();
+    expect(deleteExercise('row')).toBe(false); // has history
+    expect(app.data.exercises.some((e) => e.id === 'row')).toBe(true);
+    expect(deleteExercise('oops')).toBe(true);
+    expect(app.data.exercises.some((e) => e.id === 'oops')).toBe(false);
+    expect(app.data.templates[0].exerciseIds).toEqual(['row']);
   });
 });

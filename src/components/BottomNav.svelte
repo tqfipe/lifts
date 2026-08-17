@@ -3,8 +3,10 @@
 
   let { route }: { route: Route } = $props();
 
-  // About lives under the Settings tab
-  const activeName = $derived(route.name === 'about' ? 'settings' : route.name);
+  // About and the exercise manager live under the Settings tab
+  const activeName = $derived(
+    route.name === 'about' || route.name === 'exercises' ? 'settings' : route.name,
+  );
 
   const tabs = [
     {
