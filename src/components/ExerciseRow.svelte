@@ -1,6 +1,7 @@
 <script lang="ts">
   import { scale, slide } from 'svelte/transition';
   import ExerciseIcon from './ExerciseIcon.svelte';
+  import { computePBs, entryMaxWeight } from '../lib/derive';
   import type { Entry } from '../lib/types';
   import {
     addSet,
@@ -28,6 +29,14 @@
 
   const exercise = $derived(app.data.exercises.find((e) => e.id === entry.exerciseId));
   const unit = $derived(app.data.settings.unit ?? 'kg');
+  // PB from history (excluding this workout, like stampPB); shown as a hint
+  // when the current weight differs from it, so the PB stays visible.
+  const pbWeight = $derived.by(() => {
+    if (readonly) return null;
+    const pb = computePBs(app.data.workouts.filter((w) => w.id !== workoutId)).get(entry.exerciseId);
+    if (!pb || entry.isPB || pb.weight === entryMaxWeight(entry)) return null;
+    return pb.weight;
+  });
   let expanded = $state(false);
   let noteOpen = $state(false);
 
@@ -65,16 +74,21 @@
     {#if entry.isPB}
       <span class="pb" in:scale={{ duration: 350, start: 0.4 }}>PB</span>
     {/if}
-    <button
-      class="weight"
-      onclick={(e) => {
-        e.stopPropagation();
-        if (!readonly) onweight();
-      }}
-    >
-      <span class="num w-num">{formatWeight(toDisplay(entry.weight, unit))}</span><span class="unit">{unit}</span>
-      {#if entry.reps != null}<span class="reps-tag">×{entry.reps}</span>{/if}
-    </button>
+    <span class="weight-col">
+      <button
+        class="weight"
+        onclick={(e) => {
+          e.stopPropagation();
+          if (!readonly) onweight();
+        }}
+      >
+        <span class="num w-num">{formatWeight(toDisplay(entry.weight, unit))}</span><span class="unit">{unit}</span>
+        {#if entry.reps != null}<span class="reps-tag">×{entry.reps}</span>{/if}
+      </button>
+      {#if pbWeight != null}
+        <span class="pb-hint">PB {formatWeight(toDisplay(pbWeight, unit))} {unit}</span>
+      {/if}
+    </span>
     {#if !readonly}
       <span class="check" class:on={entry.logged} aria-hidden="true">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5" /></svg>
@@ -207,6 +221,19 @@
     padding: 3px 8px 2px;
     border-radius: 999px;
     box-shadow: 0 0 12px rgb(255 197 61 / 0.35);
+  }
+  .weight-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+  .pb-hint {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    letter-spacing: 0.03em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
   .weight {
     display: inline-flex;
