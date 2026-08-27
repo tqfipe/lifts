@@ -1,6 +1,6 @@
 <script lang="ts">
   import ExerciseIcon from '../components/ExerciseIcon.svelte';
-  import { linePath, scaleSeries, workoutsPerWeek } from '../lib/chartMath';
+  import { linePath, nearestIndex, scaleSeries, workoutsPerWeek } from '../lib/chartMath';
   import { computePBs, sortExercisesForPicker } from '../lib/derive';
   import { app } from '../lib/store.svelte';
   import { formatWeight, toDisplay } from '../lib/weight';
@@ -58,6 +58,44 @@
     const last = pts[pts.length - 1];
     return `${linePath(pts)} L${last.x} ${H - 6} L${first.x} ${H - 6} Z`;
   });
+
+  // Hold/drag on the chart to inspect a session; snaps to the nearest point.
+  let svgEl = $state<SVGSVGElement | null>(null);
+  let selIdx = $state<number | null>(null);
+  let scrubbing = false;
+
+  const sel = $derived.by(() => {
+    if (selIdx == null || selIdx >= series.length) return null;
+    return { ...series[selIdx], x: chart.points[selIdx].x, y: chart.points[selIdx].y };
+  });
+
+  const tip = $derived.by(() => {
+    if (!sel) return null;
+    const val = `${formatWeight(sel.weight)} ${unit}${sel.isPB ? ' · PB' : ''}`;
+    const date = new Date(sel.t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    const w = Math.max(val.length * 7.2, date.length * 5) + 16;
+    const h = 34;
+    const x = Math.min(Math.max(sel.x - w / 2, 2), W - w - 2);
+    const y = sel.y - h - 10 < 2 ? sel.y + 10 : sel.y - h - 10;
+    return { val, date, x, y, w, h };
+  });
+
+  function scrub(e: PointerEvent): void {
+    if (!svgEl || !chart.points.length) return;
+    const rect = svgEl.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * W;
+    selIdx = nearestIndex(chart.points.map((p) => p.x), x);
+  }
+
+  function scrubStart(e: PointerEvent): void {
+    scrubbing = true;
+    svgEl?.setPointerCapture(e.pointerId);
+    scrub(e);
+  }
+
+  function fmtSelDate(t: number): string {
+    return new Date(t).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  }
 </script>
 
 <header>
@@ -69,7 +107,14 @@
 {:else}
   <div class="chips">
     {#each sorted as e (e.id)}
-      <button class="chip" class:on={selectedId === e.id} onclick={() => (selectedId = e.id)}>
+      <button
+        class="chip"
+        class:on={selectedId === e.id}
+        onclick={() => {
+          selectedId = e.id;
+          selIdx = null;
+        }}
+      >
         <ExerciseIcon name={e.name} icon={e.icon} size={15} />
         {e.name}
       </button>
@@ -78,7 +123,17 @@
 
   <div class="panel">
     {#if series.length}
-      <svg viewBox={`0 0 ${W} ${H}`} class="chart" role="img" aria-label="Weight over time">
+      <svg
+        bind:this={svgEl}
+        viewBox={`0 0 ${W} ${H}`}
+        class="chart"
+        role="img"
+        aria-label="Weight over time"
+        onpointerdown={scrubStart}
+        onpointermove={(e) => scrubbing && scrub(e)}
+        onpointerup={() => (scrubbing = false)}
+        onpointercancel={() => (scrubbing = false)}
+      >
         <defs>
           <linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.28" />
@@ -95,9 +150,22 @@
         {#each series as p, i (p.t)}
           <circle cx={chart.points[i].x} cy={chart.points[i].y} r="4" class="dot" class:pb={p.isPB} />
         {/each}
+        {#if sel && tip}
+          <line x1={sel.x} x2={sel.x} y1="8" y2={H - 6} class="guide" />
+          <circle cx={sel.x} cy={sel.y} r="6" class="dot-hi" class:pb={sel.isPB} />
+          <g transform={`translate(${tip.x} ${tip.y})`}>
+            <rect width={tip.w} height={tip.h} rx="7" class="tip-bg" />
+            <text x={tip.w / 2} y="15" text-anchor="middle" class="tip-val" class:pb={sel.isPB}>{tip.val}</text>
+            <text x={tip.w / 2} y="27" text-anchor="middle" class="tip-date">{tip.date}</text>
+          </g>
+        {/if}
       </svg>
       <p class="chart-sub">
-        {series.length} {series.length === 1 ? 'session' : 'sessions'} · best {formatWeight(Math.max(...series.map((p) => p.weight)))} {unit}
+        {#if sel}
+          {fmtSelDate(sel.t)}{sel.sets.length ? ` · ${sel.sets.map((s) => `${formatWeight(s.weight)}×${s.reps ?? '–'}`).join('  ')}` : ''}
+        {:else}
+          {series.length} {series.length === 1 ? 'session' : 'sessions'} · best {formatWeight(Math.max(...series.map((p) => p.weight)))} {unit}
+        {/if}
       </p>
     {:else}
       <p class="empty">No data for this exercise yet.</p>
@@ -184,6 +252,43 @@
   .chart {
     width: 100%;
     height: auto;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: crosshair;
+  }
+  .guide {
+    stroke: var(--text-dim);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0.6;
+  }
+  .dot-hi {
+    fill: var(--accent);
+    stroke: var(--surface);
+    stroke-width: 2;
+    pointer-events: none;
+  }
+  .dot-hi.pb {
+    fill: var(--pb);
+  }
+  .tip-bg {
+    fill: var(--surface-2);
+    stroke: var(--hairline);
+  }
+  .tip-val {
+    font-size: 12px;
+    font-weight: 700;
+    fill: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .tip-val.pb {
+    fill: var(--pb);
+  }
+  .tip-date {
+    font-size: 9px;
+    fill: var(--text-dim);
   }
   .line {
     fill: none;
