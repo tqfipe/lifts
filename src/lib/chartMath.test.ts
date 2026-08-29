@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Workout } from './types';
-import { linePath, scaleSeries, workoutsPerWeek } from './chartMath';
+import { linePath, nearestIndex, scaleSeries, workoutsPerWeek } from './chartMath';
 
 describe('scaleSeries', () => {
   it('maps min/max to padded corners', () => {
@@ -45,6 +45,23 @@ describe('linePath', () => {
 
   it('is empty for no points', () => {
     expect(linePath([])).toBe('');
+  });
+});
+
+describe('nearestIndex', () => {
+  it('returns the index closest to x', () => {
+    expect(nearestIndex([10, 50, 90], 55)).toBe(1);
+    expect(nearestIndex([10, 50, 90], 75)).toBe(2);
+    expect(nearestIndex([10, 50, 90], -20)).toBe(0);
+    expect(nearestIndex([10, 50, 90], 500)).toBe(2);
+  });
+
+  it('prefers the first on ties', () => {
+    expect(nearestIndex([10, 30], 20)).toBe(0);
+  });
+
+  it('returns -1 for an empty list', () => {
+    expect(nearestIndex([], 5)).toBe(-1);
   });
 });
 

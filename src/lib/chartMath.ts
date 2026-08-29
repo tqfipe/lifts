@@ -33,6 +33,15 @@ export function linePath(points: ChartPoint[]): string {
   return points.map((p, i) => `${i ? 'L' : 'M'}${r1(p.x)} ${r1(p.y)}`).join(' ');
 }
 
+/** Index of the value in xs closest to x (first on ties); -1 when empty. */
+export function nearestIndex(xs: number[], x: number): number {
+  let best = -1;
+  for (let i = 0; i < xs.length; i++) {
+    if (best === -1 || Math.abs(xs[i] - x) < Math.abs(xs[best] - x)) best = i;
+  }
+  return best;
+}
+
 export function weekStart(d: Date): Date {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
