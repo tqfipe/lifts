@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rift Quiz Night</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: broadcast desk. Question stage on the left, live standings rail on the right; stacks on phones. Single dark theme by choice. */
+:root {
+  color-scheme: dark;
+  --bg: #0b1418;
+  --panel: #12222a;
+  --panel-2: #183039;
+  --line: #27444f;
+  --text: #e9f1ee;
+  --muted: #8faaa9;
+  --brass: #e2b65a;
+  --brass-ink: #1d1503;
+  --teal: #3fd0c0;
+  --good: #58d68d;
+  --bad: #ef6f6c;
+  --display: "Chakra Petch", "Trebuchet MS", sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  background: var(--bg);
+  background-image: radial-gradient(900px 500px at 85% -10%, rgba(63,208,192,.10), transparent 60%), radial-gradient(700px 500px at -10% 110%, rgba(226,182,90,.08), transparent 60%);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.5;
+}
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 20px; }
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 20px; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 1.25rem; letter-spacing: .04em; text-transform: uppercase; }
+.brand span { color: var(--brass); }
+.meta { color: var(--muted); font-size: .9rem; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+@media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 22px; }
+.stage { display: flex; flex-direction: column; gap: 18px; }
+.eyebrow { font-family: var(--display); font-size: .82rem; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: space-between; }
+.pts { color: var(--brass); }
+.question { font-size: clamp(1.35rem, 2.6vw, 1.9rem); font-weight: 600; font-family: var(--display); max-width: 30ch; }
+.hint { color: var(--muted); font-size: .95rem; max-width: 65ch; margin: 0; }
+.timer { display: flex; align-items: center; gap: 12px; }
+.bar { flex: 1; height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--teal); width: 100%; transition: width .25s linear; }
+.bar.low i { background: var(--bad); }
+.secs { font-family: var(--display); font-variant-numeric: tabular-nums; min-width: 6.5ch; text-align: right; }
+.btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 11px 18px; font-weight: 600; }
+.btn:hover { border-color: var(--teal); }
+.btn.primary { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); font-family: var(--display); letter-spacing: .04em; text-transform: uppercase; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn:disabled { opacity: .4; cursor: default; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.row.end { justify-content: space-between; }
+.answer { border-left: 4px solid var(--brass); background: var(--panel-2); border-radius: 0 8px 8px 0; padding: 14px 18px; }
+.answer .lbl { font-family: var(--display); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--brass); }
+.answer .a { font-size: 1.3rem; font-weight: 700; }
+.answer p { margin: 6px 0 0; color: var(--muted); font-size: .95rem; max-width: 65ch; }
+.score-list { display: flex; flex-direction: column; gap: 8px; }
+.score-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.score-row .name { font-weight: 600; overflow-wrap: anywhere; }
+.seg { display: flex; gap: 6px; }
+.seg button { min-width: 46px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: transparent; font-family: var(--display); font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: #062313; }
+.seg button.zero[aria-pressed="true"] { background: var(--panel-2); border-color: var(--muted); color: var(--text); }
+.rail h2 { font-size: .85rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.stand { display: flex; flex-direction: column; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.stand li { display: grid; grid-template-columns: 1.6em minmax(0,1fr) auto; gap: 8px; align-items: center; }
+.stand .pos { font-family: var(--display); color: var(--muted); }
+.stand li.lead .pos { color: var(--brass); }
+.stand .nm { overflow-wrap: anywhere; font-weight: 600; }
+.stand .sc { font-family: var(--display); font-variant-numeric: tabular-nums; font-size: 1.1rem; }
+.stand .track { grid-column: 2 / 4; height: 4px; background: var(--panel-2); border-radius: 2px; }
+.stand .track i { display: block; height: 100%; background: var(--teal); border-radius: 2px; }
+.stand li.lead .track i { background: var(--brass); }
+.rounds { display: flex; gap: 6px; flex-wrap: wrap; }
+.rounds span { height: 6px; flex: 1 1 14px; max-width: 28px; background: var(--panel-2); border-radius: 3px; }
+.rounds span.done { background: var(--teal); }
+.rounds span.now { background: var(--brass); }
+.setup { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 20px; }
+@media (max-width: 860px) { .setup { grid-template-columns: minmax(0,1fr); } }
+.setup h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); }
+.setup h1 em { font-style: normal; color: var(--brass); }
+ol.how { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; max-width: 60ch; }
+.players { display: flex; flex-direction: column; gap: 8px; }
+.players label { display: grid; grid-template-columns: 2em minmax(0,1fr) auto; gap: 8px; align-items: center; font-family: var(--display); color: var(--muted); }
+input[type=text] { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; }
+.x { border: 1px solid var(--line); background: transparent; border-radius: 8px; width: 40px; height: 40px; color: var(--muted); }
+fieldset { border: 0; padding: 0; margin: 0; }
+legend { font-family: var(--display); font-size: .82rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0; margin-bottom: 8px; }
+.big { font-size: clamp(1.6rem, 3.5vw, 2.4rem); }
+.winner { color: var(--brass); }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.roundlist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; color: var(--muted); }
+.roundlist b { color: var(--text); font-family: var(--display); }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Rift <span>Quiz Night</span></div>
+    <div class="meta" id="meta">40 questions, 5 rounds, facts checked through the 2025 season</div>
+  </header>
+  <main id="app"></main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ROUNDS = [
+    { name: "The Rift, Past and Present", blurb: "Maps, items, spells and abilities that came and went." },
+    { name: "Lore and Culture", blurb: "Runeterra, the bands, and the people behind the game." },
+    { name: "Worlds History", blurb: "Fifteen years of the Summoner's Cup." },
+    { name: "Players and Moments", blurb: "The plays and the people everyone still talks about." },
+    { name: "Deep Cuts", blurb: "Recent seasons and roster recall. Biggest points of the night." }
+  ];
+
+  // r: round, p: points, partial: allow part marks, q: question, a: answer, n: note
+  var QS = [
+    { r: 0, p: 1, q: "Rearrange the letters of Baron Nashor's surname and you get the boss monster from another game that inspired him. Name that monster.", a: "Roshan", n: "From DotA. Nashor is an anagram of Roshan." },
+    { r: 0, p: 1, q: "What was the name of the capture-point map that Dominion was played on?", a: "The Crystal Scar", n: "Dominion was retired in 2016." },
+    { r: 0, p: 2, q: "Which removed summoner spell made your team's turrets briefly invulnerable?", a: "Fortify", n: "It also boosted turret attack speed. Removed in the Season 2 preseason, November 2011." },
+    { r: 0, p: 2, q: "The Elder Dragon buff executes enemies who drop below what percentage of their maximum health?", a: "20%", n: "The execute was added in the Rise of the Elements preseason for 2020." },
+    { r: 0, p: 2, q: "Which keystone rune, which handed out random gold and consumables, was replaced by Prototype: Omnistone?", a: "Kleptomancy", n: "Swapped out in the 2020 preseason." },
+    { r: 0, p: 2, q: "Mejai's Soulstealer once had an attack damage twin that stacked on kills and assists the same way. What was it called?", a: "Sword of the Occult", n: "Removed in late 2015." },
+    { r: 0, p: 3, q: "Before his 2014 rework, what was the name of Sion's ultimate ability?", a: "Cannibalism", n: "It gave him lifesteal and attack speed and healed nearby allies off his attacks." },
+    { r: 0, p: 3, q: "Before her 2015 rework, Poppy's ultimate made her immune to everyone except one chosen target. What was it called?", a: "Diplomatic Immunity", n: "" },
+
+    { r: 1, p: 1, q: "What is the name of the drakalops that Kled rides?", a: "Skaarl", n: "The Cowardly Lizard." },
+    { r: 1, p: 1, q: "Which French studio animated Arcane?", a: "Fortiche", n: "Based in Paris. They also made the K/DA POP/STARS and RISE videos." },
+    { r: 1, p: 2, q: "What is the name of Sejuani's boar?", a: "Bristle", n: "" },
+    { r: 1, p: 2, q: "Who is the drummer of Pentakill?", a: "Olaf", n: "Karthus sings, Mordekaiser plays guitar, Sona keys, Yorick bass." },
+    { r: 1, p: 2, q: "Aurelion Sol grew out of a cancelled storm-dragon champion that Riot had previewed years earlier. What was that champion called?", a: "Ao Shin", n: "" },
+    { r: 1, p: 2, q: "Two champions are named after the in-game handles of Riot's co-founders. Name both.", a: "Ryze and Tryndamere", n: "Brandon \"Ryze\" Beck and Marc \"Tryndamere\" Merrill. Both needed for the points." },
+    { r: 1, p: 3, q: "Twisted Fate is a name he took later. What was he called at birth?", a: "Tobias Felix", n: "" },
+    { r: 1, p: 3, partial: true, q: "Name all five members of True Damage.", a: "Akali, Ekko, Qiyana, Senna, Yasuo", n: "3 points for all five, 2 for four, 1 for three." },
+
+    { r: 2, p: 1, q: "The Season 1 Championship was not a standalone show. At which event, in which country, was it played?", a: "DreamHack Summer 2011, Sweden", n: "In Jönköping. Fnatic won. Either DreamHack or Sweden earns the point." },
+    { r: 2, p: 1, q: "Which artist made \"Ignite\", the Worlds 2016 anthem?", a: "Zedd", n: "" },
+    { r: 2, p: 2, q: "At the Season 2 World Championship, which team was fined $30,000 after a player turned to look at the venue screen during a quarterfinal against TSM?", a: "Azubu Frost", n: "The player was Woong." },
+    { r: 2, p: 2, q: "Which Brazilian team beat Alliance on the last day of groups at Worlds 2014, knocking the EU champions out?", a: "KaBuM! e-Sports", n: "" },
+    { r: 2, p: 2, q: "In 2016, which team became the first wildcard-region side to reach the Worlds quarterfinals?", a: "Albus NoX Luna", n: "From the CIS region." },
+    { r: 2, p: 2, q: "Through Worlds 2025, only one support has ever been named Finals MVP. Who?", a: "Mata", n: "Samsung White, 2014." },
+    { r: 2, p: 3, partial: true, q: "T1 beat three LPL teams in a row to win Worlds 2023. Name them in order: quarterfinal, semifinal, final.", a: "LNG Esports, JD Gaming, Weibo Gaming", n: "3-0, 3-1, 3-0. One point per team placed in the right round." },
+    { r: 2, p: 3, partial: true, q: "Name the five starters of the Taipei Assassins team that won the Season 2 World Championship.", a: "Stanley, Lilballz, Toyz, Bebe, MiSTakE", n: "3 points for all five, 2 for four, 1 for three." },
+
+    { r: 3, p: 1, q: "xPeke's famous backdoor against SK Gaming: which champion was he playing, and at which tournament?", a: "Kassadin, at IEM Katowice", n: "January 2013. Both needed for the point." },
+    { r: 3, p: 1, q: "Faker's Zed-versus-Zed outplay came against Ryu. Which team was Ryu playing for?", a: "KT Bullets", n: "Game 5 of the OGN Champions Summer 2013 final." },
+    { r: 3, p: 2, q: "Which champion did Faker play in his very first televised professional game?", a: "Nidalee", n: "April 2013, against CJ Entus Blaze, where he solo killed Ambition." },
+    { r: 3, p: 2, q: "In the 2016 Worlds semifinal against SKT, which champion did GorillA bring out as a support to punish Zyra?", a: "Miss Fortune", n: "" },
+    { r: 3, p: 2, q: "Which player lost the Worlds final in two consecutive years with two different teams, in 2018 and 2019?", a: "Caps", n: "Fnatic in 2018, G2 Esports in 2019." },
+    { r: 3, p: 2, q: "Which support played in three Worlds finals in a row from 2020 to 2022?", a: "BeryL", n: "Won with DAMWON in 2020, lost with DWG KIA in 2021, won with DRX in 2022." },
+    { r: 3, p: 3, q: "Deft and Faker went to the same high school in Seoul. Name it.", a: "Mapo High School", n: "" },
+    { r: 3, p: 3, partial: true, q: "Faker's first three World Championship skins came from his 2013, 2015 and 2016 wins. Name the three champions.", a: "Zed, Ryze, Syndra", n: "One point per champion." },
+
+    { r: 4, p: 2, q: "Who was named Finals MVP of Worlds 2025?", a: "Gumayusi", n: "T1 beat KT Rolster 3-2 in Chengdu." },
+    { r: 4, p: 2, q: "Faker was the first inductee into the Hall of Legends. Who was the second?", a: "Uzi", n: "Inducted in 2025." },
+    { r: 4, p: 2, q: "The first ever First Stand was held in Seoul in 2025. Name the winner and the team they beat in the final.", a: "Hanwha Life Esports beat Karmine Corp", n: "3-1. Both teams needed for the points." },
+    { r: 4, p: 2, q: "Which team came into Worlds 2023 having won both LPL splits and MSI, only for the Grand Slam to end in a semifinal against T1?", a: "JD Gaming", n: "" },
+    { r: 4, p: 2, q: "Before 2020, only two North American teams had reached an MSI final. Name both.", a: "Counter Logic Gaming and Team Liquid", n: "CLG in 2016, Team Liquid in 2019. Both needed for the points." },
+    { r: 4, p: 3, q: "Royal Never Give Up won MSI 2018. Which team did they beat in the final?", a: "Kingzone DragonX", n: "3-1, in Paris." },
+    { r: 4, p: 3, q: "Which champion did Deft choose for his DRX World Championship skin?", a: "Caitlyn", n: "" },
+    { r: 4, p: 3, partial: true, q: "Name the five starters of Samsung White's 2014 World Championship team.", a: "Looper, DanDy, PawN, imp, Mata", n: "3 points for all five, 2 for four, 1 for three." }
+  ];
+
+  var TIEBREAK = { q: "Tiebreaker, closest number wins: how many champions were playable when League of Legends launched in October 2009?", a: "40", n: "" };
+
+  var KEY = "rift-quiz-night-v1";
+  var app = document.getElementById("app");
+  var S = load() || fresh();
+  var tick = null, deadline = 0;
+
+  function fresh() {
+    return { screen: "setup", players: ["Player 1", "Player 2", "Player 3", "Player 4", "Player 5"], timer: 45, idx: 0, rev: {}, awards: {}, tbShown: false, tbWinner: null };
+  }
+  function load() { try { var s = JSON.parse(localStorage.getItem(KEY)); return s && s.players ? s : null; } catch (e) { return null; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  function totals() {
+    var t = S.players.map(function () { return 0; });
+    Object.keys(S.awards).forEach(function (k) { (S.awards[k] || []).forEach(function (v, i) { if (i < t.length) t[i] += v || 0; }); });
+    return t;
+  }
+  function ranked() {
+    var t = totals();
+    return S.players.map(function (n, i) { return { n: n, s: t[i], i: i }; }).sort(function (a, b) { return b.s - a.s || a.i - b.i; });
+  }
+  function standings() {
+    var r = ranked(), max = Math.max(1, r[0].s), pos = 0, prev = null;
+    return '<ol class="stand">' + r.map(function (p, k) {
+      if (p.s !== prev) { pos = k + 1; prev = p.s; }
+      return '<li class="' + (pos === 1 && p.s > 0 ? "lead" : "") + '"><span class="pos">' + pos + '</span><span class="nm">' + esc(p.n) + '</span><span class="sc">' + p.s + '</span><span class="track"><i style="width:' + (p.s / max * 100) + '%"></i></span></li>';
+    }).join("") + "</ol>";
+  }
+  function stopTimer() { if (tick) { clearInterval(tick); tick = null; } }
+
+  function render() {
+    stopTimer();
+    save();
+    ({ setup: setup, q: question, round: roundBreak, end: finale })[S.screen]();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- setup ---------- */
+  function setup() {
+    var rows = S.players.map(function (n, i) {
+      return '<label for="p' + i + '"><span>' + (i + 1) + '</span><input type="text" id="p' + i + '" maxlength="18" value="' + esc(n) + '" autocomplete="off">' +
+        '<button type="button" class="x" data-rm="' + i + '" aria-label="Remove player ' + (i + 1) + '"' + (S.players.length <= 2 ? " disabled" : "") + '>×</button></label>';
+    }).join("");
+    var timers = [0, 30, 45, 60].map(function (t) {
+      return '<button type="button" data-t="' + t + '" aria-pressed="' + (S.timer === t) + '">' + (t ? t + "s" : "Off") + "</button>";
+    }).join("");
+    app.innerHTML =
+      '<div class="setup">' +
+        '<section class="panel stack">' +
+          '<h1>Five experts. <em>Forty questions.</em> Nobody holds the answer sheet.</h1>' +
+          '<ol class="how">' +
+            '<li>Put this page on one screen everybody can see.</li>' +
+            '<li>Each question is open-ended. Everyone writes an answer in secret, on paper or in a phone note.</li>' +
+            '<li>When the timer runs out, show your answers to each other, then press Reveal.</li>' +
+            '<li>Tap the points for each player who got it. The group settles spelling and close calls.</li>' +
+          '</ol>' +
+          '<ul class="roundlist">' + ROUNDS.map(function (r, i) { return "<li><b>Round " + (i + 1) + ". " + r.name + "</b><br>" + r.blurb + "</li>"; }).join("") + "</ul>" +
+        "</section>" +
+        '<section class="panel stack">' +
+          '<fieldset><legend>Players</legend><div class="players">' + rows + "</div></fieldset>" +
+          '<div class="row"><button type="button" class="btn ghost" id="add"' + (S.players.length >= 8 ? " disabled" : "") + ">Add a player</button></div>" +
+          '<fieldset><legend>Answer timer</legend><div class="seg">' + timers + "</div></fieldset>" +
+          '<button type="button" class="btn primary" id="go">Start the quiz</button>' +
+        "</section>" +
+      "</div>";
+    function grab() { S.players = S.players.map(function (n, i) { var v = document.getElementById("p" + i).value.trim(); return v || "Player " + (i + 1); }); }
+    app.querySelectorAll("[data-rm]").forEach(function (b) { b.onclick = function () { grab(); S.players.splice(+b.dataset.rm, 1); render(); }; });
+    app.querySelectorAll("[data-t]").forEach(function (b) { b.onclick = function () { grab(); S.timer = +b.dataset.t; render(); }; });
+    document.getElementById("add").onclick = function () { grab(); S.players.push("Player " + (S.players.length + 1)); render(); };
+    document.getElementById("go").onclick = function () { grab(); S.screen = "round"; S.idx = 0; render(); };
+  }
+
+  /* ---------- round intro / standings ---------- */
+  function roundBreak() {
+    var r = QS[S.idx].r, first = S.idx === 0;
+    app.innerHTML =
+      '<div class="grid">' +
+        '<section class="panel stack">' +
+          '<div class="eyebrow"><span>' + (first ? "First up" : "Round " + r + " complete") + "</span><span>Round " + (r + 1) + " of " + ROUNDS.length + "</span></div>" +
+          '<h1 class="big">' + ROUNDS[r].name + "</h1>" +
+          '<p class="hint">' + ROUNDS[r].blurb + " Eight questions.</p>" +
+          '<div class="row"><button type="button" class="btn primary" id="go">Start round ' + (r + 1) + "</button></div>" +
+        "</section>" +
+        '<aside class="panel rail"><h2>Standings</h2>' + standings() + "</aside>" +
+      "</div>";
+    document.getElementById("go").onclick = function () { S.screen = "q"; render(); };
+  }
+
+  /* ---------- question ---------- */
+  function question() {
+    var i = S.idx, q = QS[i], rev = !!S.rev[i];
+    var inRound = QS.filter(function (x) { return x.r === q.r; });
+    var n = inRound.indexOf(q) + 1;
+    if (rev && !S.awards[i]) S.awards[i] = S.players.map(function () { return 0; });
+    var dots = inRound.map(function (x, k) { return '<span class="' + (k + 1 < n ? "done" : k + 1 === n ? "now" : "") + '"></span>'; }).join("");
+    var html =
+      '<div class="grid"><section class="panel stage">' +
+      '<div class="eyebrow"><span>Round ' + (q.r + 1) + ": " + ROUNDS[q.r].name + '</span><span class="pts">' + q.p + (q.p === 1 ? " point" : " points") + "</span></div>" +
+      '<div class="rounds" aria-label="Question ' + n + " of " + inRound.length + '">' + dots + "</div>" +
+      '<h1 class="question">' + esc(q.q) + "</h1>";
+    if (!rev) {
+      if (S.timer) html += '<div class="timer"><div class="bar" id="bar"><i></i></div><div class="secs" id="secs"></div></div>';
+      html += '<p class="hint">Write your answer down in secret. Show each other before anyone presses Reveal.</p>' +
+        '<div class="row end"><button type="button" class="btn ghost" id="back"' + (i === 0 ? " disabled" : "") + '>Previous</button><button type="button" class="btn primary" id="reveal">Reveal answer</button></div>';
+    } else {
+      var opts = q.partial ? Array.from({ length: q.p + 1 }, function (_, k) { return k; }) : [0, q.p];
+      html += '<div class="answer"><div class="lbl">Answer</div><div class="a">' + esc(q.a) + "</div>" + (q.n ? "<p>" + esc(q.n) + "</p>" : "") + "</div>" +
+        '<div class="score-list" role="group" aria-label="Points awarded">' + S.players.map(function (p, pi) {
+          return '<div class="score-row"><span class="name">' + esc(p) + '</span><span class="seg">' + opts.map(function (v) {
+            return '<button type="button" class="' + (v === 0 ? "zero" : "") + '" data-p="' + pi + '" data-v="' + v + '" aria-pressed="' + ((S.awards[i][pi] || 0) === v) + '">' + (v === 0 ? "0" : "+" + v) + "</button>";
+          }).join("") + "</span></div>";
+        }).join("") + "</div>" +
+        '<div class="row end"><button type="button" class="btn ghost" id="back"' + (i === 0 ? " disabled" : "") + '>Previous</button><button type="button" class="btn primary" id="next">' + (i === QS.length - 1 ? "Final standings" : "Next question") + "</button></div>";
+    }
+    html += '</section><aside class="panel rail"><h2>Standings</h2>' + standings() + "</aside></div>";
+    app.innerHTML = html;
+
+    document.getElementById("back").onclick = function () { if (S.idx > 0) { S.idx--; render(); } };
+    if (!rev) {
+      document.getElementById("reveal").onclick = function () { S.rev[i] = true; render(); };
+      if (S.timer) startTimer();
+    } else {
+      app.querySelectorAll("[data-p]").forEach(function (b) {
+        b.onclick = function () { S.awards[i][+b.dataset.p] = +b.dataset.v; render2(); };
+      });
+      document.getElementById("next").onclick = function () {
+        if (i === QS.length - 1) { S.screen = "end"; }
+        else { S.idx++; if (QS[S.idx].r !== q.r && !S.rev[S.idx]) S.screen = "round"; }
+        render();
+      };
+    }
+  }
+  // re-render without jumping the scroll position (used while marking)
+  function render2() { var y = window.scrollY; render(); window.scrollTo(0, y); }
+
+  function startTimer() {
+    var bar = document.getElementById("bar"), secs = document.getElementById("secs");
+    deadline = Date.now() + S.timer * 1000;
+    function paint() {
+      var left = Math.max(0, deadline - Date.now());
+      bar.firstChild.style.width = (left / (S.timer * 1000) * 100) + "%";
+      bar.classList.toggle("low", left <= 10000);
+      secs.textContent = left > 0 ? Math.ceil(left / 1000) + "s" : "Pens down";
+      if (left <= 0) stopTimer();
+    }
+    paint();
+    tick = setInterval(paint, 250);
+  }
+
+  /* ---------- finale ---------- */
+  function finale() {
+    var r = ranked(), top = r.filter(function (p) { return p.s === r[0].s; });
+    var tie = top.length > 1, head, body = "";
+    if (!tie) head = '<span class="winner">' + esc(top[0].n) + "</span> wins with " + top[0].s + " points";
+    else if (S.tbWinner !== null && S.players[S.tbWinner]) head = '<span class="winner">' + esc(S.players[S.tbWinner]) + "</span> wins on the tiebreaker";
+    else head = "Tied at the top on " + r[0].s + " points";
+    if (tie && S.tbWinner === null) {
+      body = '<h2 class="question">' + esc(TIEBREAK.q) + "</h2>" +
+        '<p class="hint">Only ' + top.map(function (p) { return esc(p.n); }).join(" and ") + " answer. Write a number, show it, then reveal.</p>";
+      if (!S.tbShown) body += '<div class="row"><button type="button" class="btn primary" id="tb">Reveal answer</button></div>';
+      else body += '<div class="answer"><div class="lbl">Answer</div><div class="a">' + TIEBREAK.a + '</div></div><p class="hint">Who was closest?</p><div class="row">' +
+        top.map(function (p) { return '<button type="button" class="btn" data-w="' + p.i + '">' + esc(p.n) + "</button>"; }).join("") + "</div>";
+    }
+    app.innerHTML =
+      '<div class="grid"><section class="panel stack">' +
+        '<div class="eyebrow"><span>Final result</span><span>' + QS.length + " questions played</span></div>" +
+        '<h1 class="big">' + head + "</h1>" + body +
+        '<div class="row end"><button type="button" class="btn ghost" id="back">Back to the last question</button><button type="button" class="btn" id="again">Reset and start over</button></div>' +
+      '</section><aside class="panel rail"><h2>Final standings</h2>' + standings() + "</aside></div>";
+    var tb = document.getElementById("tb");
+    if (tb) tb.onclick = function () { S.tbShown = true; render(); };
+    app.querySelectorAll("[data-w]").forEach(function (b) { b.onclick = function () { S.tbWinner = +b.dataset.w; render(); }; });
+    document.getElementById("back").onclick = function () { S.screen = "q"; S.tbWinner = null; render(); };
+    document.getElementById("again").onclick = function () { var keep = S.players, t = S.timer; S = fresh(); S.players = keep; S.timer = t; render(); };
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
