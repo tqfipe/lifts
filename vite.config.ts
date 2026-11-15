@@ -26,9 +26,6 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        // public/quiz is a standalone page: keep it out of the app shell's cache and fallback
-        globIgnores: ['quiz/**'],
-        navigateFallbackDenylist: [/\/quiz(\/|$)/],
       },
     }),
   ],
